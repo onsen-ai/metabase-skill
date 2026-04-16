@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Mockup: DASHBOARD_NAME</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #303030; }
+
+  .header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header p { font-size: 13px; color: #707070; margin-top: 4px; }
+
+  .filter-bar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 12px 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .filter { background: #f0f2f5; border: 1px solid #d0d0d0; border-radius: 6px; padding: 6px 14px; font-size: 13px; color: #505050; cursor: default; }
+  .filter .label { font-weight: 600; color: #303030; }
+
+  .tabs { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 24px; display: flex; gap: 0; }
+  .tab { padding: 12px 20px; font-size: 14px; font-weight: 500; color: #707070; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab.active { color: #509EE3; border-bottom-color: #509EE3; }
+  .tab:hover { color: #303030; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .grid-container { padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 8px;
+    align-content: start;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: #707070; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 700; color: #303030; }
+  .card-type { font-size: 11px; color: #a0a0a0; margin-top: auto; padding-top: 8px; }
+
+  .card-chart { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 120px; }
+  .card-chart-placeholder { color: #c0c0c0; font-size: 14px; text-align: center; }
+
+  .card-heading { background: transparent; border: none; padding: 8px 0; }
+  .card-heading h2 { font-size: 18px; font-weight: 700; color: #303030; }
+
+  /* Sizing helpers: row height ~40px equivalent */
+  .h-4 { grid-row: span 4; }
+  .h-8 { grid-row: span 8; }
+  .h-10 { grid-row: span 10; }
+  .h-1 { grid-row: span 1; min-height: 40px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DASHBOARD_NAME</h1>
+  <p>DASHBOARD_DESCRIPTION</p>
+</div>
+
+<div class="filter-bar">
+  <!-- FILTERS: duplicate this block for each filter -->
+  <div class="filter"><span class="label">Date Range</span> ▾ past 30 days</div>
+  <div class="filter"><span class="label">Category</span> ▾ all</div>
+</div>
+
+<div class="tabs">
+  <!-- TABS: duplicate for each tab, set first as active -->
+  <div class="tab active" onclick="showTab('tab1')">Overview</div>
+  <div class="tab" onclick="showTab('tab2')">Detail</div>
+</div>
+
+<!-- TAB 1 -->
+<div id="tab1" class="tab-content active">
+<div class="grid-container"><div class="grid">
+
+  <!-- HEADING: virtual card -->
+  <div class="card card-heading" style="grid-column: span 24;">
+    <h2>Key Metrics</h2>
+  </div>
+
+  <!-- SCALAR CARDS: 4 across (6 cols each) -->
+  <div class="card h-4" style="grid-column: span 6;">
+    <div class="card-title">Total Revenue</div>
+    <div class="card-value">$1,510,621</div>
+    <div class="card-type">scalar</div>
+  </div>
+  <div class="card h-4" style="grid-column: span 6;">
+    <div class="card-title">Total Orders</div>
+    <div class="card-value">18,760</div>
+    <div class="card-type">scalar</div>
+  </div>
+  <div class="card h-4" style="grid-column: span 6;">
+    <div class="card-title">Avg Order Value</div>
+    <div class="card-value">$80.52</div>
+    <div class="card-type">smartscalar</div>
+  </div>
+  <div class="card h-4" style="grid-column: span 6;">
+    <div class="card-title">Total Customers</div>
+    <div class="card-value">2,500</div>
+    <div class="card-type">scalar</div>
+  </div>
+
+  <!-- HEADING -->
+  <div class="card card-heading" style="grid-column: span 24;">
+    <h2>Trends</h2>
+  </div>
+
+  <!-- CHART CARDS: 2 across (12 cols each) -->
+  <div class="card h-8" style="grid-column: span 12;">
+    <div class="card-title">Revenue Over Time</div>
+    <div class="card-chart"><div class="card-chart-placeholder">📈 line chart<br>x: month &nbsp; y: revenue</div></div>
+    <div class="card-type">line</div>
+  </div>
+  <div class="card h-8" style="grid-column: span 12;">
+    <div class="card-title">Orders by Category</div>
+    <div class="card-chart"><div class="card-chart-placeholder">📊 bar chart<br>x: category &nbsp; y: count</div></div>
+    <div class="card-type">bar</div>
+  </div>
+
+</div></div>
+</div>
+
+<!-- TAB 2 -->
+<div id="tab2" class="tab-content">
+<div class="grid-container"><div class="grid">
+
+  <!-- TABLE: full width -->
+  <div class="card h-10" style="grid-column: span 24;">
+    <div class="card-title">Top Products by Revenue</div>
+    <div class="card-chart">
+      <div class="card-chart-placeholder">
+        📋 table<br>
+        columns: product, category, revenue, orders, avg_price
+      </div>
+    </div>
+    <div class="card-type">table</div>
+  </div>
+
+</div></div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

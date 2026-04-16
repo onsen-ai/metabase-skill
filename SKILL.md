@@ -93,23 +93,99 @@ Decide the mode before starting work:
 
 ### Phase 1: Design
 
-Gather requirements before writing any code:
+The design phase has three stages: **Define → Mockup → Approve**. Get user approval at each stage before advancing.
+
+#### Stage 1: Requirements & Definitions
+
+Gather requirements:
 
 1. **What business question does this dashboard answer?**
 2. **Who is the audience?** Executive summary (scalars, trends) vs analyst detail (tables, drill-downs)
 3. **What data sources?** Run `databases` then `tables --database <id>` to discover available tables and fields
-4. **What metrics?** Define each calculation (SUM, COUNT, AVG, ratios, YoY comparisons)
-5. **What filters?** Date range, categories, regions — and which should cascade
-6. **What layout?** Tabs, card types (scalar KPIs, line trends, bar breakdowns, tables), grid positions
 
-Output a **design document** covering:
+Then formally define the dashboard's data model:
+
+**Metrics** — each measure that will appear on the dashboard:
+
+| Metric | Calculation | Display | Card |
+|--------|------------|---------|------|
+| Total Revenue | SUM(total) | scalar | Revenue KPI |
+| Revenue Trend | SUM(total) GROUP BY month | line | Revenue Over Time |
+| Orders by Category | COUNT(*) GROUP BY category | bar | Category Breakdown |
+
+**Dimensions** — the breakdowns and groupings:
+
+| Dimension | Source | Used in |
+|-----------|--------|---------|
+| Month | orders.created_at (temporal: month) | Revenue Trend |
+| Category | products.category | Category Breakdown, Top Products |
+
+**Filters/Parameters** — what users can control:
+
+| Filter | Type | Default | Required | Applied to |
+|--------|------|---------|----------|------------|
+| Date Range | date/all-options | past30days~ | yes | All cards |
+| Category | string/= | — | no | Category cards |
+
+Present to the user and get approval before proceeding to mockup.
+
+#### Stage 2: Progressive Mockup
+
+Build the mockup in three progressive levels. Get user approval at each level.
+
+**Level 1: Plain Text Mockup**
+
+A markdown sketch of the layout. Fast, disposable, forces alignment on card placement:
+
+```
+=== Tab: Overview ===
+
+[Revenue: $1.5M]  [Orders: 18,760]  [AOV: $80.35]  [Customers: 2,500]
+     6 cols            6 cols            6 cols           6 cols
+
+[Revenue Over Time ────────────────]  [Orders by Category ──────────────]
+       line chart, 12 cols                   bar chart, 12 cols
+
+[Top Products ─────────────────────────────────────────────────────────]
+                          table, 24 cols
+
+Filters: [Date Range ▼ past 30 days]  [Category ▼ all]
+```
+
+Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-text-template.md` for the template.
+
+**Level 2: HTML Mockup**
+
+After text mockup is approved, generate a standalone HTML file with:
+- Correct 24-column grid layout
+- Card placeholders with titles, display type labels, and sample values
+- Filter bar with parameter names and types
+- Tab navigation if multiple tabs
+- Approximate sizing matching Metabase's rendering
+
+Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-html-template.html` for the base template. Customize it for the specific dashboard. Save as `mockup.html` — the user opens it in a browser.
+
+**Level 3: Metabase Mockup with Sample Data**
+
+After HTML mockup is approved, create the actual dashboard in Metabase with:
+- Simple cards using basic queries (e.g., `SELECT 'Gadgets' AS category, 42000 AS revenue`) or real queries with LIMIT
+- Correct layout, tab structure, and filter parameters wired up
+- Visualization settings applied (chart types, number formatting, colors)
+
+This is a real Metabase dashboard the user can click through. It validates layout, viz settings, and filter UX before investing in proper SQL development. The sample queries will be replaced with real ones in the SQL Development and Implementation phases.
+
+#### Stage 3: Design Document
+
+After the mockup is approved, produce the formal design document:
+
+Read `${CLAUDE_SKILL_DIR}/assets/templates/design-doc.md` for the template. It covers:
 - Dashboard name, description, target collection
+- Metrics/dimensions/filters definitions (from Stage 1)
 - Tab structure with card list per tab
-- For each card: name, display type, metric definition, which filters apply
-- Parameter definitions with types and defaults
-- Grid layout sketch (24-column grid, cards positioned by row/col/size_x/size_y)
-
-Read `${CLAUDE_SKILL_DIR}/assets/templates/design-doc.md` for the template.
+- For each card: name, display type, metric, filters, viz settings
+- Parameter definitions with types, defaults, and cascade dependencies
+- Grid layout (which cards where, sizes)
+- SQL file plan (which queries to write, which snippets to create)
 
 ### Phase 2: SQL Development
 

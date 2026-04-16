@@ -11,7 +11,30 @@
 - **Database:** [database name] (id: [id])
 - **Key tables:** [list tables with brief descriptions]
 
-## Tabs
+## Metrics
+
+| Metric | Calculation | Display | Card |
+|--------|------------|---------|------|
+| [e.g., Total Revenue] | [e.g., SUM(total)] | [e.g., scalar] | [e.g., Revenue KPI] |
+| [e.g., Revenue Trend] | [e.g., SUM(total) GROUP BY month] | [e.g., line] | [e.g., Revenue Over Time] |
+| [e.g., Top Products] | [e.g., SUM(total) GROUP BY product, ORDER BY DESC LIMIT 20] | [e.g., table] | [e.g., Product Table] |
+
+## Dimensions
+
+| Dimension | Source | Used in |
+|-----------|--------|---------|
+| [e.g., Month] | [e.g., orders.created_at (temporal: month)] | [e.g., Revenue Trend] |
+| [e.g., Category] | [e.g., products.category] | [e.g., Category Breakdown, Top Products] |
+| [e.g., Product Name] | [e.g., products.title] | [e.g., Top Products] |
+
+## Filters / Parameters
+
+| Filter | Slug | Type | Default | Required | Cascades from | Applied to |
+|--------|------|------|---------|----------|---------------|------------|
+| [e.g., Date Range] | date_range | date/all-options | past30days~ | yes | — | All cards |
+| [e.g., Category] | category | string/= | — | no | — | Category cards |
+
+## Tabs & Layout
 
 ### Tab 1: [Name]
 
@@ -26,13 +49,6 @@
 | Card | Display | Metric | Size | Position |
 |------|---------|--------|------|----------|
 | ... | ... | ... | ... | ... |
-
-## Parameters (Filters)
-
-| Name | Slug | Type | Default | Required | Cascades from |
-|------|------|------|---------|----------|---------------|
-| Date Range | date_range | date/all-options | past30days~ | yes | — |
-| Category | category | string/= | — | no | — |
 
 ## Parameter Mappings
 
