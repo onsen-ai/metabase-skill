@@ -76,6 +76,45 @@ These rules protect the LLM context window and prevent secret leakage. They are 
 - **Use file-based mutations.** Write JSON payloads to files, then pass them to `card create --from` or `dashboard put --from`. This keeps large JSON out of context.
 - **Dashboard payloads are lightweight without card objects.** The PUT payload only needs layout fields (card_id, row, col, size, viz_settings, parameter_mappings). The embedded `card` object is read-only and ignored. A 30-card dashboard layout is ~3K tokens — small enough to construct directly in context.
 
+## Project Directory
+
+All working files (design docs, mockups, SQL, card specs, layout JSON) must be saved to a **project directory** — never `/tmp`. This ensures SQL can be version controlled, reviewed, and audited.
+
+**At the start of any NEW or EDIT workflow, establish the project directory:**
+
+1. If the user has an existing project/repo, use it
+2. If not, ask: "Where should I save the working files for this dashboard? (e.g., `~/projects/sales-dashboard/`)"
+3. Create the directory structure:
+
+```
+<project-dir>/
+├── design/
+│   ├── design-doc.md          # Requirements, metrics, dimensions, filters
+│   ├── mockup.md              # Text mockup
+│   └── mockup.html            # HTML mockup
+├── sql/
+│   ├── snippets/              # Reusable SQL fragments
+│   │   ├── order_base.sql
+│   │   └── date_filter.sql
+│   ├── 01_revenue_trend.sql   # One file per card
+│   ├── 02_revenue_by_cat.sql
+│   └── ...
+├── cards/                     # Card creation JSON specs
+│   ├── card_revenue_trend.json
+│   └── ...
+└── dashboard/
+    ├── shell.json             # Dashboard creation payload
+    └── layout.json            # Dashboard PUT layout payload
+```
+
+**SQL files are the source of truth.** Every native SQL question must start as a `.sql` file in the project directory. The workflow is:
+1. Write SQL to `sql/filename.sql`
+2. Test it (via redshift skill or Metabase)
+3. Build the card JSON spec referencing the SQL content from the file
+4. Create the card via `card create --from cards/spec.json`
+
+When passing SQL to the CLI, read it from the file — don't paste SQL inline. This keeps the SQL auditable and the card spec clean.
+
 ## Task Identification
 
 Decide the mode before starting work:
@@ -165,7 +204,7 @@ After text mockup is approved, generate a standalone HTML file with:
 - Tab navigation if multiple tabs
 - Approximate sizing matching Metabase's rendering
 
-Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-html-template.html` for the base template. Customize it for the specific dashboard. Save as `mockup.html` — the user opens it in a browser.
+Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-html-template.html` for the base template. Customize it for the specific dashboard. Save as `<project-dir>/design/mockup.html` — the user opens it in a browser.
 
 **Level 3: Metabase Mockup with Sample Data**
 
@@ -206,11 +245,14 @@ SQL is generally preferred because it is code — it can be reviewed, versioned,
 
 **SQL development steps:**
 
-1. **Create a working directory** — `sql/` folder for all SQL files
-2. **Write SQL files** — one file per question/card
-3. **Test each query** — via the redshift skill (`query.py`) for direct execution, or create the card and run `card query <id>`
-4. **Create Metabase snippets** for shared base data (common joins, date filters)
-5. **Create questions** from validated SQL via `card create --from`
+All SQL lives in the project directory's `sql/` folder. Never write SQL inline or to `/tmp`.
+
+1. **Write snippet SQL files** — save to `sql/snippets/snippet_name.sql`, one per shared CTE/fragment
+2. **Write card SQL files** — save to `sql/01_card_name.sql`, one file per question. Number-prefix for ordering.
+3. **Test each query** — via the redshift skill (`query.py "$(cat sql/01_card_name.sql)"`) for direct execution, or create a temporary card
+4. **Create Metabase snippets** — `snippet create --name "order_base" --content "$(cat sql/snippets/order_base.sql)"`
+5. **Build card JSON specs** — save to `cards/card_name.json`, referencing the SQL from the file: read `sql/01_card_name.sql` and embed in the card spec's `dataset_query.native.query`
+6. **Create questions** — `card create --from cards/card_name.json`
 
 **SQL formatting conventions:**
 
