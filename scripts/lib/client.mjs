@@ -19,8 +19,8 @@ export function loadConfig() {
 }
 
 export function saveConfig(config) {
-  mkdirSync(CONFIG_DIR, { recursive: true });
-  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
   return CONFIG_FILE;
 }
 
@@ -35,9 +35,17 @@ export function resolveInstance(config, instanceName) {
     process.stderr.write(`Error: Instance "${name}" not found. Available: ${Object.keys(config.instances).join(', ')}\n`);
     process.exit(1);
   }
-  const apiKey = process.env[inst.keyEnvVar];
-  if (!apiKey) {
-    process.stderr.write(`Error: Env var ${inst.keyEnvVar} is not set.\n`);
+  let apiKey;
+  if (inst.apiKey) {
+    apiKey = inst.apiKey;
+  } else if (inst.keyEnvVar) {
+    apiKey = process.env[inst.keyEnvVar];
+    if (!apiKey) {
+      process.stderr.write(`Error: Env var ${inst.keyEnvVar} is not set.\n`);
+      process.exit(1);
+    }
+  } else {
+    process.stderr.write(`Error: Instance "${name}" has no apiKey or keyEnvVar configured. Re-run setup.\n`);
     process.exit(1);
   }
   return { url: inst.url, apiKey, name };

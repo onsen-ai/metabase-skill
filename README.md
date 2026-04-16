@@ -295,6 +295,20 @@ metabase-skill/
 }
 ```
 
+**Direct key storage** (if you pick `direct` mode during setup, the key itself is written to config — the file is chmod 0600):
+
+```json
+{
+  "default": "production",
+  "instances": {
+    "production": {
+      "url": "https://metabase.example.com",
+      "apiKey": "mb_..."
+    }
+  }
+}
+```
+
 Edit directly or re-run `node scripts/metabase.mjs setup`.
 
 ## 🧰 Prerequisites
