@@ -122,7 +122,8 @@ Decide the mode before starting work:
 | Mode | When | Workflow |
 |------|------|----------|
 | **NEW** | Build a dashboard from scratch | Design → SQL Dev → Implement → Test |
-| **EDIT** | Modify an existing dashboard | Audit current → Identify changes → Implement → Test |
+| **STUDY** | Understand a specific existing dashboard in depth (describe it, audit it, plan changes from it) | Summary → Visual confirmation → Per-card inspection → Override audit |
+| **EDIT** | Modify an existing dashboard | Run STUDY first → Identify changes → Implement → Test |
 | **EXPLORE** | Browse collections, understand what exists | Discovery commands |
 | **REORGANIZE** | Move items, manage collections | Collection commands |
 
@@ -394,13 +395,33 @@ Run through this checklist:
 
 ---
 
+## STUDY Workflow
+
+When you need to understand an existing dashboard in depth — to describe what it does, audit its design, or plan changes from it. **Run this checklist before claiming you understand a dashboard.** JSON-only analysis is brittle and routinely produces wrong descriptions when cards are repeated with viz overrides.
+
+1. **Get summary** — `dashboard <id>`. Inspect:
+   - `unique_card_count` vs `card_count` — a 6×-placed scalar contributes 6 to `card_count` and 1 to `unique_card_count`
+   - `repeated_card_ids` — cards used more than once almost always carry per-placement overrides (different displayed metric, different title)
+   - `cards[].overrides` — surfaces the discriminating viz settings per dashcard (`title`, `scalar_field`, `graph_metrics`, `graph_dimensions`, `series_titles`)
+2. **Visual confirmation** — ask the user for a screenshot of the rendered dashboard, or open the dashboard URL yourself. The summary tells you the wiring; the screenshot tells you what users actually see. Skip only if the dashboard is trivial (1-2 cards) or the user has shown it already.
+3. **Inspect each unique card** — `card <id>` for summary. The summary surfaces `result_columns` (what the SQL produces), `referenced_snippets` (shared SQL pulled in), and `template_tags` (parameters the card accepts) — usually enough to understand the card without fetching the full payload. Use `card <id> --full --out <file>` only when you need the SQL string itself.
+4. **Inspect each repeated placement** — for any card_id appearing in `repeated_card_ids`, run `dashcard <dashboard-id> <index|name>` for each placement to see the full viz_settings overrides. The summary's `overrides` field is a starting point, not a substitute.
+5. **Read shared snippets** — `snippet <id>` for any snippet listed in a card's `referenced_snippets`. Snippets define the data model; without them you don't understand the dashboard.
+6. **Cross-check produced columns vs displayed metrics** — compare each card's `result_columns` (from the card summary) against every placement's `scalar_field` / `graph_metrics` (from the dashboard summary). Orphan columns (produced but never displayed) and missing columns (referenced but not produced) are signs of drift.
+7. **Map parameters** — for each dashboard parameter, note its type, default, and which template-tags or fields the dashcards map it to.
+8. **Run a card query** — `card query <id> [--out <file>]` for the most complex card to confirm the data shape actually returned.
+
+The output of STUDY is the foundation for any EDIT or sync workflow. Don't skip steps 2 and 4 — that's where most "I described it wrong" mistakes come from.
+
+---
+
 ## EDIT Workflow
 
-1. **Audit current state** — `dashboard <id>` for summary, `dashcard <id> <name>` for specific cards
+1. **Audit current state** — run the STUDY workflow above. The audit prevents misdescribing the dashboard and catches per-dashcard viz overrides you would otherwise overwrite when constructing a new layout payload.
 2. **Identify what to change** — compare against requirements
 3. **For layout changes** — `dashboard <id> --layout --out current.json`, modify, `dashboard put <id> --from updated.json`
 4. **For card query changes** — `card <id> --full --out card.json`, edit the SQL/MBQL, `card update <id> --patch patch.json`
-5. **For viz changes** — modify `visualization_settings` in the dashcard (dashboard-level) or card (card-level)
+5. **For viz changes** — modify `visualization_settings` in the dashcard (dashboard-level override) or card (card-level default). Remember: dashcard-level wins for that placement only.
 6. **Test** — run Phase 4 checklist on changed items
 
 ---
@@ -441,6 +462,13 @@ These protect performance and data integrity. Follow them, but use judgement —
 - Dashcard IDs are not stable across PUTs — always GET fresh state
 - The `card` object inside dashcards is read-only on PUT
 - Dashcard `visualization_settings` override card-level settings for that dashboard only
+
+**Dashboard Summary Interpretation:**
+- `card_count` is total dashcard placements; `unique_card_count` is distinct cards. A 6×-placed scalar contributes 6 to `card_count` and 1 to `unique_card_count`.
+- `repeated_card_ids` lists every card_id used more than once, with counts. Per-dashcard `visualization_settings` overrides routinely make the same card_id render as N functionally distinct visualizations (different displayed metric, different title). **Always run `dashcard <dashboard-id> <index|name>` for each repeated placement before describing what the dashboard shows.**
+- The summary's per-dashcard `overrides` field surfaces the discriminating viz settings (`title`, `scalar_field`, `graph_metrics`, `graph_dimensions`, `series_titles`) — use these to tell repeated placements apart at a glance, but treat `overrides` as a hint, not the full picture (it's a curated subset of the actual viz_settings).
+- Override fields appear at the top level of `visualization_settings` for simple dashcards (e.g. scalars), but inside `visualization.settings` for combined-visualization dashcards (multi-series, multi-metric); the summary handles both. When wrapped in `visualization`, `graph.metrics` references renamed `COLUMN_N` keys mapped back to original column names via `columnValuesMapping` — the summary resolves these for you.
+- Detect orphan SQL columns by aggregating every dashcard's `scalar_field` / `graph_metrics` for a given card and comparing against the SQL's produced columns. Don't infer orphans from row counts alone.
 
 **Parameter Mappings:**
 - Wire parameter mappings during layout creation, not as an afterthought
