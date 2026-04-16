@@ -9,3 +9,4 @@ metabase-workspace/
 /onsen_dashboard_*.json
 /specs/metabase-openapi.yaml
 /representations/
+examples/discovery/hb_db_metadata.json
