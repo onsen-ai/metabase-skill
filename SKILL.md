@@ -193,7 +193,7 @@ A markdown sketch of the layout. Fast, disposable, forces alignment on card plac
 Filters: [Date Range ▼ past 30 days]  [Category ▼ all]
 ```
 
-Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-text-template.md` for the template.
+Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-text-template.md` for the template. Save to `<project-dir>/design/mockup.md`.
 
 **Level 2: HTML Mockup**
 
