@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+*.log
+metabase-workspace/
+/tmp/
+
+# Large working files (not part of the skill)
+/dashboard_*.json
+/onsen_dashboard_*.json
+/specs/metabase-openapi.yaml
+/representations/

@@ -1,0 +1,36 @@
+{
+  "skill_name": "metabase",
+  "note": "Write evals — these CREATE and then DELETE test objects. All in personal collection (id: 2) on Onsen instance.",
+  "evals": [
+    {
+      "id": 9,
+      "prompt": "Create a simple scalar question called 'Eval - Order Count' that counts all rows in the ORDERS table (table id 5, database id 1). Put it in collection 2. After creating it, execute the query to verify it works, then delete the card.",
+      "expected_output": "Creates card via card create --from, verifies with card query, then deletes with card delete. Clean start and clean end — no artifacts left.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Create a native SQL question called 'Eval - Revenue by Month' with this SQL: SELECT DATE_TRUNC('month', CREATED_AT) AS month, SUM(TOTAL) AS revenue FROM ORDERS GROUP BY 1 ORDER BY 1. Use database 1, collection 2, display type 'line'. Create it, verify the query runs, then delete it.",
+      "expected_output": "Creates a native SQL card with correct dataset_query structure. Verifies with card query. Deletes afterward. No template tags needed for this simple query.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Create a snippet called 'eval_test_base' with content 'SELECT o.ID, o.CREATED_AT, o.TOTAL, p.CATEGORY FROM ORDERS o JOIN PRODUCTS p ON o.PRODUCT_ID = p.ID'. Then create a native SQL question called 'Eval - Category Totals' that uses this snippet: 'SELECT CATEGORY, SUM(TOTAL) AS revenue FROM ({{snippet: eval_test_base}}) base GROUP BY 1 ORDER BY 2 DESC'. Database 1, collection 2, display 'bar'. Verify the question runs. Then delete the card and archive the snippet.",
+      "expected_output": "Creates snippet, creates card referencing it via template-tag, verifies query execution, then cleans up both. Tests the snippet workflow end-to-end.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Create a test dashboard called 'Eval - Test Dashboard' in collection 2. Then create two scalar cards: 'Eval - Total Orders' (COUNT on ORDERS table 5) and 'Eval - Total Revenue' (SUM of TOTAL field 42 on ORDERS table 5). Add both cards to the dashboard side by side (first at col 0, second at col 12, both size 12x4). Verify the dashboard shows 2 cards. Then delete the dashboard and both cards.",
+      "expected_output": "Full dashboard creation workflow: create cards, create dashboard shell, PUT dashcards layout, verify with dashboard summary. Clean delete of everything at the end.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "Create a collection called 'Eval - Temp Collection' inside collection 2. Create a scalar card 'Eval - People Count' (COUNT on PEOPLE table 3, database 1) in this new collection. Verify the card appears in the collection via collection-items. Then delete the card and archive the collection.",
+      "expected_output": "Tests collection create, card create in specific collection, collection-items listing, then cleanup. Archives collection (not delete — collections can only be archived).",
+      "files": []
+    }
+  ]
+}

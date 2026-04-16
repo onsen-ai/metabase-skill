@@ -1,0 +1,53 @@
+{
+  "skill_name": "metabase",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to explore what's available on our Metabase instance. Show me the databases, then list the tables in the Sample Database, and tell me what collections exist.",
+      "expected_output": "Uses the CLI to run databases, tables, and collections commands. Shows formatted text output. Does NOT attempt to create or modify anything.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Show me the structure of dashboard 22 on the Onsen instance. I want to understand what cards it has, what filters are configured, and how the tabs are organized.",
+      "expected_output": "Uses dashboard summary command to get compact overview. Shows tabs, cards with display types, parameters. Does NOT load the full 475KB payload into context. May use dashcard command to inspect individual cards.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I need to design a sales performance dashboard. It should show total revenue (scalar), revenue trend over time (line chart), revenue by product category (bar chart), and a top products table. It needs a date range filter and an optional category filter. Write me the design document.",
+      "expected_output": "Produces a structured design document following the template in assets/templates/design-doc.md. Includes tab structure, card list with display types, parameter definitions, grid layout, and SQL file plan. Does NOT create anything in Metabase yet.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Write me the SQL for a Metabase question that shows monthly revenue by product category, with a date range filter and optional category filter. The data is in the Sample Database (database 1) — orders table (id 5) joined with products (id 8). Use Metabase field filter syntax for the date parameter.",
+      "expected_output": "Writes a SQL file following the sql-style-guide conventions: 4-space indent, UPPER CASE keywords, 120-char separators, header comment block. Uses field filter syntax correctly (WHERE {{date_range}} not WHERE date = {{date_range}}). Uses [[ ]] for optional category filter. Includes the template-tags JSON configuration. Saves SQL to a file.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Look at card 402 on Onsen and tell me what it does, what query it runs, and what viz settings it has.",
+      "expected_output": "Uses card summary command first for compact overview. If more detail needed, uses --full --out to save to file, then reads specific sections. Does NOT dump the full card JSON into context. Describes the card's purpose, query type, display type, and key viz settings.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "I want to understand how the visualization settings work for a bar chart. Show me examples of how to configure a stacked bar chart with custom colors and value labels.",
+      "expected_output": "Reads the visualization-cookbook.md reference. Provides complete, copy-pasteable visualization_settings JSON examples for bar charts including stackable.stack_type, series_settings with colors, graph.show_values, and column_settings for formatting. References the cookbook file.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "What snippets exist on the Onsen instance? Show me the content of the order_base snippet.",
+      "expected_output": "Uses snippets command to list all snippets, then snippet <id> to show the content of order_base. Formatted text output showing the SQL content.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Search for anything related to 'revenue' across cards and dashboards on the Onsen instance.",
+      "expected_output": "Uses search command with --models card,dashboard flag. Shows formatted results with model type, ID, name, and collection. Does NOT load full objects.",
+      "files": []
+    }
+  ]
+}
