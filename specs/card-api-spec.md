@@ -583,7 +583,9 @@ The `widget-type` determines the filter UI. Common types:
 
 #### Table Alias Requirement
 
-When using field filters with table aliases, CTEs, or subqueries, you must specify the alias so Metabase generates correct SQL. Set the `alias` field in the template tag:
+When using field filters with table aliases, CTEs, or subqueries, you **must** specify the `alias` field in the template tag. This is REQUIRED — without it, Metabase generates fully-qualified column names like `PUBLIC.ORDERS.CREATED_AT` or `PUBLIC.PRODUCTS.CATEGORY`, which fail when the query uses table aliases (e.g. `ORDERS o`, `PRODUCTS p`).
+
+**Error you'll see without `alias`:** `Column "PUBLIC.ORDERS.CREATED_AT" not found` — this means Metabase expanded the field filter to its fully-qualified form, but the SQL engine can't resolve it because the table was aliased.
 
 ```json
 {
@@ -597,7 +599,7 @@ When using field filters with table aliases, CTEs, or subqueries, you must speci
 }
 ```
 
-Without the alias, Metabase may generate `WHERE products.category = ...` instead of `WHERE p.category = ...`, causing SQL errors.
+The `alias` value must match the table alias used in your SQL. For example, if your SQL has `FROM PRODUCTS p`, use `"alias": "p.category"`. If your SQL has `FROM ORDERS o`, use `"alias": "o.created_at"`.
 
 #### Dashboard Parameter → Field Filter Wiring
 

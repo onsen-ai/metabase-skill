@@ -17,6 +17,8 @@ Formatting conventions for SQL queries backing Metabase dashboards. Follow these
 - **NULLIF** around denominators in division to prevent divide-by-zero
 - **FROM on its own line** with table alias
 - **Comma at end of line** (not comma-first)
+- **Human-readable Title Case column aliases** with quoted identifiers: `AS "Revenue"`, `AS "Avg Price"`, `AS "Order Date"`. These directly control column headers in Metabase tables and chart axis labels. Never use ALL_CAPS aliases like `AS REVENUE` or `AS AVG_PRICE` — they display as ugly column headers in the UI
+- **Every card should have a `description`** field explaining what it shows. Dashboard descriptions support markdown (bold, lists, headings). Card descriptions should be short summaries
 
 ## Header Template
 
@@ -136,6 +138,17 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) = 
 ```sql
 '2026-04-05' :: DATE
 revenue :: NUMERIC(18, 2)
+```
+
+### Human-readable column aliases
+
+```sql
+SELECT  SUM(o.net_revenue_gbp)                               AS "Revenue",
+        COUNT(DISTINCT o.order_id)                            AS "Orders",
+        SUM(o.net_revenue_gbp)
+            / NULLIF(COUNT(DISTINCT o.order_id), 0)          AS "Avg Order Value",
+        p.category_name                                       AS "Category"
+FROM    odl.fact_orders o
 ```
 
 ### Metabase field filter in WHERE

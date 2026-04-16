@@ -305,7 +305,7 @@ Execute in this order:
    ```
    `dashboard create --from dash_shell.json`
 
-5. **Build layout and PUT** — construct the lightweight payload:
+5. **Build layout and PUT** — construct the lightweight payload. **Wire parameter mappings during layout construction** — don't add them as an afterthought. Each dashcard should include its `parameter_mappings` inline:
    ```json
    {
      "tabs": [{"id": -1, "name": "Overview"}, {"id": -2, "name": "Detail"}],
@@ -319,13 +319,15 @@ Execute in this order:
         "visualization_settings": {"card.title": "Revenue"},
         "parameter_mappings": [
           {"parameter_id": "date_range", "card_id": <card_id>,
-           "target": ["dimension", ["template-tag", "date_range"]]}
+           "target": ["dimension", ["template-tag", "date_range"], {"stage-number": 0}]}
         ],
         "series": []}
      ]
    }
    ```
    Write to file, then: `dashboard put <dashboard_id> --from layout.json`
+   
+   **Important:** Native SQL cards must have template tags defined (in `dataset_query.native.template-tags`) BEFORE parameter mappings will work. Always verify parameter wiring in the Metabase UI after the PUT — stale cache can show false errors.
 
 6. **Verify** — `dashboard <id>` to confirm structure
 
@@ -392,15 +394,40 @@ These protect performance and data integrity. Follow them, but use judgement —
 
 ## Common Gotchas
 
+**Dashboard PUT:**
 - Dashboard PUT requires `tabs` alongside `dashcards` — always include both
 - Dashcard IDs are not stable across PUTs — always GET fresh state
 - The `card` object inside dashcards is read-only on PUT
 - Dashcard `visualization_settings` override card-level settings for that dashboard only
+
+**Parameter Mappings:**
+- Wire parameter mappings during layout creation, not as an afterthought
+- Native SQL cards need template tags (`{{name}}` in SQL + template-tag definition) BEFORE they can accept parameter mappings
+- Field refs in parameter mappings need `{"base-type": "type/Text"}` metadata — don't use `null`
+- Include `{"stage-number": 0}` as third element in mapping targets
+- After wiring parameters via API, verify in the Metabase UI — stale cache can show false errors
+
+**Field Filters:**
+- Field filter syntax: `WHERE {{tag}}` not `WHERE column = {{tag}}`
+- `alias` is REQUIRED on field filter template tags when SQL uses table aliases. Without it, Metabase generates fully-qualified column names (e.g. `PUBLIC.ORDERS.CREATED_AT`) which fail when the query uses aliases like `ORDERS o`
+
+**Virtual Cards:**
+- `heading` type: plain text only, no markdown. `text` type: markdown supported
+- Don't include `dataset_query: {}` in heading `virtual_card` — omit it entirely
+- Heading cards need `"dashcard.background": false` for transparent section heading style
+- Correct heading recipe: `{"dashcard.background": false, "virtual_card": {"name": null, "display": "heading", "visualization_settings": {}, "archived": false}, "text": "Section Title"}`
+
+**SQL & Documentation:**
+- Enforce SQL style guide from the start, not as cleanup — read `specs/sql-style-guide.md` before writing any SQL
+- SQL column aliases must be human-readable Title Case with quoted identifiers: `AS "Revenue"` not `AS REVENUE` or `AS revenue`
+- Always write descriptions — dashboards support markdown, cards should have short summaries
+- Always test SQL before creating Metabase questions
+
+**General:**
 - Snippets can't be deleted — only archived via `snippet update <id> --archived true`
 - Snippet nesting requires ALL transitive snippets declared as template-tags at the card level
 - `lib/uuid` values in pMBQL must be valid UUID format
 - `category` parameter type is legacy — prefer `string/=` for new dashboards
-- Field filter syntax: `WHERE {{tag}}` not `WHERE column = {{tag}}`
 - 404 errors from Metabase are plain text, not JSON
 
 ---

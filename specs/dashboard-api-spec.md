@@ -304,7 +304,9 @@ Each dashcard places a card (question/visualization) on the dashboard grid.
 
 ### Virtual Cards (no card_id)
 
-For text, headings, links, and iframes, `card_id` is null and `visualization_settings` contains the content:
+For text, headings, links, and iframes, `card_id` is null and `visualization_settings` contains the content.
+
+**Text card** (supports full markdown rendering):
 
 ```json
 {
@@ -316,10 +318,33 @@ For text, headings, links, and iframes, `card_id` is null and `visualization_set
       "dataset_query": {},
       "visualization_settings": {}
     },
-    "text": "## My Heading"
+    "text": "## My Heading\n\nMarkdown **bold**, *italic*, and lists supported."
   }
 }
 ```
+
+**Heading card** (plain text only, no markdown):
+
+```json
+{
+  "card_id": null,
+  "visualization_settings": {
+    "dashcard.background": false,
+    "virtual_card": {
+      "name": null,
+      "display": "heading",
+      "visualization_settings": {},
+      "archived": false
+    },
+    "text": "Section Title"
+  }
+}
+```
+
+**Important:**
+- `heading` type uses plain text (no markdown). `text` type supports full markdown rendering.
+- Do NOT include `dataset_query` in the `virtual_card` object for headings — it causes issues. The correct heading `virtual_card` has only `name`, `display`, `visualization_settings`, and `archived`.
+- Heading cards should set `"dashcard.background": false` for transparent section heading style.
 
 Virtual card display types: `text`, `heading`, `link`, `iframe`, `placeholder`
 
