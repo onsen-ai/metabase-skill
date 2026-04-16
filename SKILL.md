@@ -93,7 +93,9 @@ Decide the mode before starting work:
 
 ### Phase 1: Design
 
-The design phase has three stages: **Define → Mockup → Approve**. Get user approval at each stage before advancing.
+The design phase is available when the user wants to plan before building. **It's not mandatory** — if the user knows what they want and says "just build it", skip straight to SQL Development or Implementation. Use judgement: a simple 3-card dashboard doesn't need a formal design process; a 30-card multi-tab scorecard does.
+
+When used, the design phase has three stages: **Define → Mockup → Approve**. The user can exit at any stage and move to implementation.
 
 #### Stage 1: Requirements & Definitions
 
