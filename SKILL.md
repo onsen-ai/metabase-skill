@@ -6,8 +6,9 @@ description: >
   BI dashboard, analytics dashboard, metabase question, metabase card, MBQL query, native SQL question,
   metabase snippet, metabase collection, visualization settings, dashboard filters, parameter mappings,
   or wants to create/edit/manage any Metabase content. Also use when the user wants to build a
-  reporting dashboard, KPI scorecard, or data exploration tool backed by a SQL database.
-  Covers the full lifecycle: requirements → design → SQL development → implementation → testing.
+  reporting dashboard, KPI scorecard, trading dashboard, or data exploration tool backed by a SQL
+  database. Covers chart formatting, number formatting, conditional formatting, dashboard layout,
+  and the full lifecycle: requirements → design → SQL development → implementation → testing.
   Works with multiple Metabase instances. Always use this skill for any Metabase-related task.
 ---
 
