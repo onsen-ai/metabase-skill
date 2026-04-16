@@ -4,9 +4,9 @@ node_modules/
 metabase-workspace/
 /tmp/
 
-# Large working files (not part of the skill)
+# Working data (local only, not part of the skill)
 /dashboard_*.json
 /onsen_dashboard_*.json
 /specs/metabase-openapi.yaml
 /representations/
-examples/discovery/hb_db_metadata.json
+/examples/
