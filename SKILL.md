@@ -109,7 +109,7 @@ All working files (design docs, mockups, SQL, card specs, layout JSON) must be s
 
 **SQL files are the source of truth.** Every native SQL question must start as a `.sql` file in the project directory. The workflow is:
 1. Write SQL to `sql/filename.sql`
-2. Test it (via redshift skill or Metabase)
+2. Test it (via `card query` once the card exists, or a temporary card)
 3. Build the card JSON spec referencing the SQL content from the file
 4. Create the card via `card create --from cards/spec.json`
 
@@ -249,7 +249,7 @@ All SQL lives in the project directory's `sql/` folder. Never write SQL inline o
 
 1. **Write snippet SQL files** — save to `sql/snippets/snippet_name.sql`, one per shared CTE/fragment
 2. **Write card SQL files** — save to `sql/01_card_name.sql`, one file per question. Number-prefix for ordering.
-3. **Test each query** — via the redshift skill (`query.py "$(cat sql/01_card_name.sql)"`) for direct execution, or create a temporary card
+3. **Test each query** — the default path is to create a temporary card and run `card query <id>`. If the user's project instructions (e.g. CLAUDE.md) specify a database-specific SQL runner (a redshift/snowflake/bigquery/etc. skill), use that instead for direct execution.
 4. **Create Metabase snippets** — `snippet create --name "order_base" --content "$(cat sql/snippets/order_base.sql)"`
 5. **Build card JSON specs** — save to `cards/card_name.json`, referencing the SQL from the file: read `sql/01_card_name.sql` and embed in the card spec's `dataset_query.native.query`
 6. **Create questions** — `card create --from cards/card_name.json`
@@ -427,7 +427,7 @@ These protect performance and data integrity. Follow them, but use judgement —
 
 - **Every SQL query must have aggregation or LIMIT.** No unbounded SELECT * on large tables.
 - **Queries >2min suggest anti-patterns.** Consider materialized views, date range filters on sort keys, or pre-aggregation.
-- **Always test SQL before creating Metabase questions.** Run via redshift skill or `card query` first.
+- **Always test SQL before creating Metabase questions.** Run `card query` first, or use any database-specific SQL runner the user has configured in their project instructions.
 - **SQL files are the source of truth.** Always save SQL to disk before creating questions — this enables review and versioning.
 - **Never delete without explicit user request.** Archive (set `archived: true`) instead of hard delete when possible.
 - **Dashboards with many filters are fine.** Use cascading filters and sensible defaults to keep them manageable.

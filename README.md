@@ -235,7 +235,7 @@ The skill is designed for **agentic use** (the LLM is the primary user). Two rul
 
 | Rule | How |
 | ---- | --- |
-| **Always test before deploying** | Run SQL via redshift skill or `card query` before creating Metabase questions |
+| **Always test before deploying** | Run `card query` before creating Metabase questions |
 | **SQL files are source of truth** | Save SQL to disk first — enables review and version control |
 | **NULLIF on division** | SQL style guide enforces divide-by-zero protection |
 
