@@ -257,9 +257,8 @@ metabase-skill/
 │   ├── discovery-api-spec.md      #   Database/table/field metadata, search
 │   ├── snippet-api-spec.md        #   Snippet CRUD, nesting, composition
 │   └── sql-style-guide.md         #   SQL formatting conventions
-├── assets/templates/              # Design doc template
-├── evals/                         # 13 test cases (8 read + 5 write)
-└── examples/                      # 30 real API response samples
+├── assets/templates/              # Design doc, text mockup, HTML mockup templates
+└── evals/                         # 13 test cases (8 read + 5 write)
 ```
 
 ## ⚙️ Configuration

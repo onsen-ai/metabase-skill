@@ -69,7 +69,7 @@ or the breakout value (for multi-series charts):
 ## Line Chart
 
 ### Minimal
-_Source: production card hb_card_32 (simplified)_
+_Source: production card (simplified)_
 
 ```json
 {
@@ -117,7 +117,7 @@ _Source: representations repo (line_chart.yaml)_ `[representations]`
 ```
 
 ### Multi-Series with Breakout
-_Source: production card onsen_card_233_
+_Source: production card_
 
 ```json
 {
@@ -149,7 +149,7 @@ _Source: production card onsen_card_233_
 ```
 
 ### Percentage Line with Fixed Y-Axis Range
-_Source: production card hb_card_30_
+_Source: production card_
 
 ```json
 {
@@ -210,7 +210,7 @@ When embedding a line chart in a dashboard, common overrides include:
 ## Bar Chart
 
 ### Minimal
-_Source: production card onsen_card_205 (simplified)_
+_Source: production card (simplified)_
 
 ```json
 {
@@ -223,7 +223,7 @@ _Source: production card onsen_card_205 (simplified)_
 ```
 
 ### Stacked Bar with Series Order
-_Source: production card onsen_card_205_
+_Source: production card_
 
 ```json
 {
@@ -267,7 +267,7 @@ _Source: representations repo (bar_chart_stacked.yaml)_ `[representations]`
 ```
 
 ### Stacked Bar with Custom Series Colors (ABCDE segments)
-_Source: production card hb_card_1063_
+_Source: production card_
 
 ```json
 {
@@ -299,7 +299,7 @@ _Source: production card hb_card_1063_
 ## Combo Chart (Line + Bar)
 
 ### Footfall and Conversion (dual axis)
-_Source: production card hb_card_769_
+_Source: production card_
 
 A combo chart uses `series_settings` to assign each series to either `"bar"` or `"line"` display,
 and optionally to `"left"` or `"right"` axis.
@@ -526,7 +526,7 @@ Colour variance columns green when positive, red when negative:
 ```
 
 ### Range Conditional Formatting (Colour Scale)
-_Source: production card onsen_card_307_
+_Source: production card_
 
 Use a three-colour gradient for percentage-change columns:
 
@@ -557,7 +557,7 @@ Use a three-colour gradient for percentage-change columns:
 ```
 
 ### Table with ISA-Style Mini Bars and Renamed Columns
-_Source: production card hb_card_445_
+_Source: production card_
 
 ```json
 {
@@ -622,7 +622,7 @@ An empty `visualization_settings` with `"display": "scalar"` will show the first
 from the query result.
 
 ### With Currency Formatting
-_Source: production dashboard onsen_dashboard_18 dashcard_
+_Source: production dashboard dashcard_
 
 ```json
 {
@@ -637,7 +637,7 @@ _Source: production dashboard onsen_dashboard_18 dashcard_
 ```
 
 ### With scalar.field (Multi-Column Query)
-_Source: production dashboard onsen_dashboard_15 + onsen_dashboard_18 dashcards_
+_Source: production dashboard dashcards_
 
 When a single query returns many columns, use `scalar.field` at the **dashcard level** to
 pick which column to display. This lets you reuse ONE query card across many scalar tiles.
@@ -677,7 +677,7 @@ Suffix formatting:
 ```
 
 ### With scalar.switch_positive_negative
-_Source: production dashboard onsen_dashboard_20 dashcards_
+_Source: production dashboard dashcards_
 
 When a metric going UP is bad (e.g. error rate, flagging rate), flip the positive/negative colouring:
 
@@ -695,7 +695,7 @@ When a metric going UP is bad (e.g. error rate, flagging rate), flip the positiv
 ```
 
 ### Scalar with Graph Settings (KPI + Trend)
-_Source: production card hb_card_7275_
+_Source: production card_
 
 When a scalar card also has graph settings, it can show a trend chart when placed in a dashboard:
 
@@ -725,7 +725,7 @@ When a scalar card also has graph settings, it can show a trend chart when place
 ## Smart Scalar
 
 ### Minimal with Previous Period Comparison
-_Source: production card hb_card_724_
+_Source: production card_
 
 ```json
 {
@@ -742,7 +742,7 @@ Note: smart scalar automatically compares to the previous period by default. You
 `scalar.comparisons` to customize or add multiple comparisons.
 
 ### With Explicit Previous Period
-_Source: production card onsen_card_213_
+_Source: production card_
 
 ```json
 {
@@ -782,7 +782,7 @@ Comparison types:
 - `"staticNumber"` -- compares to a fixed number (set `"value"` and optional `"label"`)
 
 ### Smart Scalar with scalar.field Override (Dashcard Level)
-_Source: production dashboard onsen_dashboard_15 dashcard_
+_Source: production dashboard dashcard_
 
 When the underlying query returns multiple columns, override at dashcard level:
 
@@ -851,7 +851,7 @@ _Source: representations repo (waterfall.yaml)_ `[representations]`
 ```
 
 ### Full Waterfall (Margin Bridge)
-_Source: production card hb_card_1274_
+_Source: production card_
 
 ```json
 {
@@ -976,7 +976,7 @@ _Source: representations repo (map_pins.yaml)_ `[representations]`
 ```
 
 ### Currency
-_Source: production card onsen_card_307 + representations repo_
+_Source: production card + representations repo_
 
 ```json
 {
@@ -1031,7 +1031,7 @@ _Source: production dashboard_109 dashcard + representations repo_
 - `time_enabled` -- `null` to hide time, `"minutes"`, `"seconds"`, or `"milliseconds"`
 
 ### Custom Prefix/Suffix and Scale
-_Source: production dashboard_1617 dashcard + production card hb_card_769_
+_Source: production dashboard + card_
 
 ```json
 {
@@ -1082,7 +1082,7 @@ Common scale patterns:
 ## Series Settings Deep Dive
 
 ### Custom Colors
-_Source: production cards hb_card_1063, hb_card_7275_
+_Source: production cards_
 
 ```json
 {
@@ -1096,7 +1096,7 @@ _Source: production cards hb_card_1063, hb_card_7275_
 ```
 
 ### Mixed Display Types (Line + Bar on same chart)
-_Source: production card hb_card_769_
+_Source: production card_
 
 ```json
 {
@@ -1185,7 +1185,7 @@ Available operators for `"type": "single"`:
 - `"is-null"`, `"not-null"` -- null checks
 
 ### Range Colour Scale
-_Source: production card onsen_card_307 + representations repo_
+_Source: production card + representations repo_
 
 ```json
 {
