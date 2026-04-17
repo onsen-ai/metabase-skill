@@ -18,18 +18,34 @@ export async function run(instance, command, args) {
 async function users(instance, args) {
   const query = getArg(args, '--query');
   const status = getArg(args, '--status') || 'active';
-  const groupId = getArg(args, '--group');
+  const filterAdmins = args.includes('--admins');
+  const groupFilter = getArg(args, '--group');
+  const groupsAllFilter = getArg(args, '--groups-all');
+
   let path = `/api/user?status=${status}`;
   if (query) path += `&query=${encodeURIComponent(query)}`;
-  if (groupId) path += `&group_id=${groupId}`;
 
   const [userRes, groupsRes] = await Promise.all([
     apiRequest(instance, 'GET', path),
     apiRequest(instance, 'GET', '/api/permissions/group'),
   ]);
-  const list = (userRes.data.data || userRes.data);
+  let list = (userRes.data.data || userRes.data);
   const groupNames = {};
   groupsRes.data.forEach(g => { groupNames[g.id] = g.name; });
+
+  if (filterAdmins) {
+    list = list.filter(u => u.is_superuser);
+  }
+
+  if (groupFilter) {
+    const gids = groupFilter.split(',').map(Number);
+    list = list.filter(u => (u.group_ids || []).some(gid => gids.includes(gid)));
+  }
+
+  if (groupsAllFilter) {
+    const gids = groupsAllFilter.split(',').map(Number);
+    list = list.filter(u => gids.every(gid => (u.group_ids || []).includes(gid)));
+  }
 
   if (args.includes('--json')) {
     console.log(JSON.stringify(list.map(u => ({
@@ -38,7 +54,12 @@ async function users(instance, args) {
       groups: (u.group_ids || []).map(gid => ({ id: gid, name: groupNames[gid] || `Group ${gid}` })),
     }))));
   } else {
-    console.log('Users:');
+    const label = [
+      filterAdmins ? 'Admins' : 'Users',
+      groupFilter ? `in group ${groupFilter.split(',').map(g => groupNames[Number(g)] || g).join(' or ')}` : '',
+      groupsAllFilter ? `in ALL of groups ${groupsAllFilter.split(',').map(g => groupNames[Number(g)] || g).join(' + ')}` : '',
+    ].filter(Boolean).join(' ');
+    console.log(`${label}:`);
     list.forEach(u => {
       const admin = u.is_superuser ? ' [admin]' : '';
       const active = u.is_active ? '' : ' [deactivated]';
@@ -48,7 +69,7 @@ async function users(instance, args) {
       const groupStr = groups.length ? ` — ${groups.join(', ')}` : '';
       console.log(`  ${String(u.id).padStart(4)}  ${(u.common_name || u.email).padEnd(30)} ${u.email}${admin}${active}${groupStr}`);
     });
-    console.log(`\n${list.length} users`);
+    console.log(`\n${list.length} ${filterAdmins ? 'admins' : 'users'}`);
   }
 }
 
@@ -254,6 +275,7 @@ async function permissions(instance, args) {
   const dbId = getArg(args, '--database');
   const groupId = getArg(args, '--group');
   const isCollections = args.includes('--collections');
+  const nativeSqlOnly = args.includes('--native-sql');
 
   const lookups = await loadLookups(instance);
 
@@ -280,6 +302,31 @@ async function permissions(instance, args) {
   if (groupId) path = `/api/permissions/graph/group/${groupId}`;
 
   const { data } = await apiRequest(instance, 'GET', path);
+
+  if (nativeSqlOnly) {
+    console.log('Groups with native SQL access:\n');
+    let totalGroups = 0;
+    for (const [gid, dbs] of Object.entries(data.groups)) {
+      const nativeDbs = [];
+      for (const [did, perms] of Object.entries(dbs)) {
+        const query = typeof perms['create-queries'] === 'string' ? perms['create-queries'] : null;
+        if (query === 'query-builder-and-native') {
+          nativeDbs.push(did);
+        }
+      }
+      if (nativeDbs.length) {
+        totalGroups++;
+        const groupName = lookups.groups[gid] || 'Unknown';
+        console.log(`  ${groupName} (${gid}):`);
+        nativeDbs.forEach(did => {
+          console.log(`    ${String(did).padStart(4)}  ${lookups.databases[did] || 'Unknown'}`);
+        });
+        console.log();
+      }
+    }
+    console.log(`${totalGroups} groups with native SQL access`);
+    return;
+  }
 
   if (args.includes('--json')) {
     console.log(JSON.stringify(data));
