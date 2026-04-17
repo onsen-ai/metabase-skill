@@ -13,7 +13,7 @@ export async function run(instance, args) {
 async function create(instance, args) {
   const name = getArg(args, '--name');
   if (!name) {
-    process.stderr.write('Usage: collection create --name <n> [--parent <id>] [--description <d>]\n');
+    process.stderr.write('Usage: collection create --name <n> [--parent <id>] [--description <d>] [--authority-level official]\n');
     process.exit(1);
   }
   const body = { name };
@@ -21,15 +21,17 @@ async function create(instance, args) {
   if (parentId) body.parent_id = parseInt(parentId);
   const description = getArg(args, '--description');
   if (description) body.description = description;
+  const authLevel = getArg(args, '--authority-level');
+  if (authLevel) body.authority_level = authLevel === 'null' ? null : authLevel;
 
   const { data } = await apiRequest(instance, 'POST', '/api/collection', body);
-  console.log(JSON.stringify({ id: data.id, name: data.name, location: data.location }));
+  console.log(JSON.stringify({ id: data.id, name: data.name, location: data.location, authority_level: data.authority_level || null }));
 }
 
 async function update(instance, args) {
   const id = parseInt(args[0]);
   if (isNaN(id)) {
-    process.stderr.write('Usage: collection update <id> [--name <n>] [--parent <id>] [--archived true|false]\n');
+    process.stderr.write('Usage: collection update <id> [--name <n>] [--parent <id>] [--archived true|false] [--authority-level official|null]\n');
     process.exit(1);
   }
   const body = {};
@@ -41,14 +43,16 @@ async function update(instance, args) {
   if (archived !== null) body.archived = archived === 'true';
   const description = getArg(args, '--description');
   if (description !== null) body.description = description;
+  const authLevel = getArg(args, '--authority-level');
+  if (authLevel !== null) body.authority_level = authLevel === 'null' ? null : authLevel;
 
   if (Object.keys(body).length === 0) {
-    process.stderr.write('Nothing to update. Provide --name, --parent, --description, or --archived.\n');
+    process.stderr.write('Nothing to update. Provide --name, --parent, --description, --archived, or --authority-level.\n');
     process.exit(1);
   }
 
   const { data } = await apiRequest(instance, 'PUT', `/api/collection/${id}`, body);
-  console.log(JSON.stringify({ id: data.id, name: data.name, archived: data.archived }));
+  console.log(JSON.stringify({ id: data.id, name: data.name, archived: data.archived, authority_level: data.authority_level || null }));
 }
 
 function getArg(args, flag) {

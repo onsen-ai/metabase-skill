@@ -97,6 +97,7 @@ export function summarizeDashboard(dash) {
     width: dash.width,
     auto_apply_filters: dash.auto_apply_filters,
     collection_id: dash.collection_id,
+    collection_authority_level: dash.collection_authority_level || null,
     archived: dash.archived,
     tabs: (dash.tabs || []).map(t => ({ id: t.id, name: t.name })),
     parameters: (dash.parameters || []).map(p => ({

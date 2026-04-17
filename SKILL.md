@@ -60,8 +60,8 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **Get snippet** | `snippet <id>` | Snippet content |
 | **Create snippet** | `snippet create --name <n> --content <sql>` | Returns `{id, name}` |
 | **Update snippet** | `snippet update <id> [--name <n>] [--content <sql>]` | Updated snippet |
-| **Create collection** | `collection create --name <n> [--parent <id>]` | Returns `{id, name}` |
-| **Update collection** | `collection update <id> [--name <n>] [--parent <id>]` | Updated collection |
+| **Create collection** | `collection create --name <n> [--parent <id>] [--authority-level official]` | Returns `{id, name}` |
+| **Update collection** | `collection update <id> [--name <n>] [--parent <id>] [--authority-level official\|null]` | Updated collection |
 
 All commands prefixed with: `node ${CLAUDE_SKILL_DIR}/scripts/metabase.mjs`
 
@@ -400,6 +400,7 @@ Run through this checklist:
 When you need to understand an existing dashboard in depth — to describe what it does, audit its design, or plan changes from it. **Run this checklist before claiming you understand a dashboard.** JSON-only analysis is brittle and routinely produces wrong descriptions when cards are repeated with viz overrides.
 
 1. **Get summary** — `dashboard <id>`. Inspect:
+   - `collection_authority_level` — `"official"` means the dashboard's collection has the medal badge (curated, production content). `null` means it's not officially designated. Use this to classify dashboards as official vs working/ad-hoc.
    - `unique_card_count` vs `card_count` — a 6×-placed scalar contributes 6 to `card_count` and 1 to `unique_card_count`
    - `repeated_card_ids` — cards used more than once almost always carry per-placement overrides (different displayed metric, different title)
    - `cards[].overrides` — surfaces the discriminating viz settings per dashcard (`title`, `scalar_field`, `graph_metrics`, `graph_dimensions`, `series_titles`)
@@ -432,11 +433,13 @@ Graduated discovery — adapt depth to the task:
 
 1. `databases` — what's available?
 2. `tables --database <id>` — what tables and fields?
-3. `collections --tree` — how is content organized?
+3. `collections --tree` — how is content organized? Collections marked `★` are official (Metabase's "medal" badge for curated, production-quality content). The `authority_level: "official"` field on a collection gives all dashboards inside it the medal icon.
 4. `collection-items <id>` — what's in a specific collection?
 5. `search <query>` — find specific cards, dashboards, or collections
 6. `card <id>` — inspect a specific card's metadata
 7. `dashboard <id>` — inspect a dashboard's structure
+
+**Official collections:** Collections with `authority_level: "official"` show a medal badge in Metabase's UI, signalling curated production content. When auditing or reorganising, check which collections have this status via `collections --tree` (marked with `★`). To set or remove official status: `collection update <id>` with `{"authority_level": "official"}` or `{"authority_level": null}`. This is an Enterprise/Pro feature — some instances may not support it.
 
 **Shortcut:** If the user's intent is clear (e.g., "show me Q3 sales by region"), skip discovery and go straight to SQL development.
 

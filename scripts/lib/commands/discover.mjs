@@ -72,14 +72,19 @@ async function collections(instance, args) {
     }
   } else {
     const { data } = await apiRequest(instance, 'GET', '/api/collection');
-    const list = data.map(c => ({ id: c.id, name: c.name, location: c.location, personal_owner_id: c.personal_owner_id || null }));
+    const list = data.map(c => ({
+      id: c.id, name: c.name, location: c.location,
+      personal_owner_id: c.personal_owner_id || null,
+      ...(c.authority_level ? { authority_level: c.authority_level } : {}),
+    }));
     if (wantJson(args)) {
       console.log(JSON.stringify(list));
     } else {
       console.log('Collections:');
       list.forEach(c => {
         const personal = c.personal_owner_id ? ' (personal)' : '';
-        console.log(`  ${String(c.id).padStart(4)}  ${c.name}${personal}`);
+        const badge = c.authority_level === 'official' ? ' ★' : '';
+        console.log(`  ${String(c.id).padStart(4)}  ${c.name}${personal}${badge}`);
       });
       console.log(`\n${list.length} collections`);
     }
@@ -89,6 +94,7 @@ async function collections(instance, args) {
 function formatTreeJson(nodes) {
   return nodes.map(n => ({
     id: n.id, name: n.name,
+    ...(n.authority_level ? { authority_level: n.authority_level } : {}),
     children: n.children ? formatTreeJson(n.children) : [],
   }));
 }
@@ -97,7 +103,8 @@ function printTree(nodes, depth) {
   nodes.forEach(n => {
     const indent = '  '.repeat(depth + 1);
     const prefix = depth > 0 ? '└─ ' : '';
-    console.log(`${indent}${prefix}[${n.id}] ${n.name}`);
+    const badge = n.authority_level === 'official' ? ' ★' : '';
+    console.log(`${indent}${prefix}[${n.id}] ${n.name}${badge}`);
     if (n.children?.length) printTree(n.children, depth + 1);
   });
 }
@@ -143,7 +150,10 @@ async function search(instance, args) {
   const { data } = await apiRequest(instance, 'GET', path);
   const results = (data.data || data).map(r => ({
     id: r.id, name: r.name, model: r.model,
-    collection: r.collection ? { id: r.collection.id, name: r.collection.name } : null,
+    collection: r.collection ? {
+      id: r.collection.id, name: r.collection.name,
+      ...(r.collection.authority_level ? { authority_level: r.collection.authority_level } : {}),
+    } : null,
   }));
 
   if (wantJson(args)) {
@@ -151,7 +161,8 @@ async function search(instance, args) {
   } else {
     console.log(`Search results for "${query}":`);
     results.forEach(r => {
-      const col = r.collection ? ` (${r.collection.name})` : '';
+      const badge = r.collection?.authority_level === 'official' ? ' ★' : '';
+      const col = r.collection ? ` (${r.collection.name}${badge})` : '';
       console.log(`  ${r.model.padEnd(12)} ${String(r.id).padStart(6)}  ${r.name}${col}`);
     });
     console.log(`\n${results.length} results`);
