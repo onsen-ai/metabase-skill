@@ -17,6 +17,18 @@ if (command === 'setup') {
   process.exit(0);
 }
 
+if (command === 'instances') {
+  const config = loadConfig();
+  if (!config?.instances) { process.stderr.write('No instances configured. Run: node scripts/metabase.mjs setup\n'); process.exit(1); }
+  console.log('Metabase instances:');
+  for (const [name, inst] of Object.entries(config.instances)) {
+    const isDefault = name === config.default ? ' [default]' : '';
+    const auth = inst.keyEnvVar ? `env: ${inst.keyEnvVar}` : 'direct key';
+    console.log(`  ${name.padEnd(20)} ${inst.url}  (${auth})${isDefault}`);
+  }
+  process.exit(0);
+}
+
 const config = loadConfig();
 const instance = resolveInstance(config, instanceName);
 
