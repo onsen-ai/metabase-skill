@@ -23,21 +23,30 @@ async function users(instance, args) {
   if (query) path += `&query=${encodeURIComponent(query)}`;
   if (groupId) path += `&group_id=${groupId}`;
 
-  const { data } = await apiRequest(instance, 'GET', path);
-  const list = (data.data || data);
+  const [userRes, groupsRes] = await Promise.all([
+    apiRequest(instance, 'GET', path),
+    apiRequest(instance, 'GET', '/api/permissions/group'),
+  ]);
+  const list = (userRes.data.data || userRes.data);
+  const groupNames = {};
+  groupsRes.data.forEach(g => { groupNames[g.id] = g.name; });
 
   if (args.includes('--json')) {
     console.log(JSON.stringify(list.map(u => ({
       id: u.id, email: u.email, first_name: u.first_name, last_name: u.last_name,
-      is_superuser: u.is_superuser, is_active: u.is_active, group_ids: u.group_ids,
+      is_superuser: u.is_superuser, is_active: u.is_active,
+      groups: (u.group_ids || []).map(gid => ({ id: gid, name: groupNames[gid] || `Group ${gid}` })),
     }))));
   } else {
     console.log('Users:');
     list.forEach(u => {
       const admin = u.is_superuser ? ' [admin]' : '';
       const active = u.is_active ? '' : ' [deactivated]';
-      const groups = u.group_ids ? ` (groups: ${u.group_ids.join(',')})` : '';
-      console.log(`  ${String(u.id).padStart(4)}  ${(u.common_name || u.email).padEnd(30)} ${u.email}${admin}${active}${groups}`);
+      const groups = (u.group_ids || [])
+        .filter(gid => gid !== 1)
+        .map(gid => groupNames[gid] || `Group ${gid}`);
+      const groupStr = groups.length ? ` (${groups.join(', ')})` : '';
+      console.log(`  ${String(u.id).padStart(4)}  ${(u.common_name || u.email).padEnd(30)} ${u.email}${admin}${active}${groupStr}`);
     });
     console.log(`\n${list.length} users`);
   }
@@ -218,6 +227,27 @@ async function groupRemoveUser(instance, args) {
   process.stderr.write(`Membership ${membershipId} removed.\n`);
 }
 
+// --- LOOKUPS ---
+
+async function loadLookups(instance) {
+  const [groupsRes, dbsRes, collsRes] = await Promise.all([
+    apiRequest(instance, 'GET', '/api/permissions/group'),
+    apiRequest(instance, 'GET', '/api/database'),
+    apiRequest(instance, 'GET', '/api/collection').catch(() => ({ data: [] })),
+  ]);
+
+  const groups = {};
+  groupsRes.data.forEach(g => { groups[g.id] = g.name; });
+
+  const databases = {};
+  (dbsRes.data.data || dbsRes.data).forEach(d => { databases[d.id] = d.name; });
+
+  const collections = { root: 'Root collection' };
+  (Array.isArray(collsRes.data) ? collsRes.data : []).forEach(c => { collections[c.id] = c.name; });
+
+  return { groups, databases, collections };
+}
+
 // --- PERMISSIONS ---
 
 async function permissions(instance, args) {
@@ -225,21 +255,19 @@ async function permissions(instance, args) {
   const groupId = getArg(args, '--group');
   const isCollections = args.includes('--collections');
 
+  const lookups = await loadLookups(instance);
+
   if (isCollections) {
     const { data } = await apiRequest(instance, 'GET', '/api/collection/graph');
     if (args.includes('--json')) {
       console.log(JSON.stringify(data));
     } else {
       console.log(`Collection Permissions (revision ${data.revision}):\n`);
-      const groupsData = await apiRequest(instance, 'GET', '/api/permissions/group');
-      const groupNames = {};
-      groupsData.data.forEach(g => { groupNames[g.id] = g.name; });
-
       for (const [gid, colls] of Object.entries(data.groups)) {
-        console.log(`  ${groupNames[gid] || 'Group ' + gid} (id: ${gid}):`);
+        console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (id: ${gid}):`);
         for (const [cid, perm] of Object.entries(colls)) {
-          const label = cid === 'root' ? 'root collection' : `collection ${cid}`;
-          console.log(`    ${label.padEnd(25)} ${perm}`);
+          const name = lookups.collections[cid] || `collection ${cid}`;
+          console.log(`    ${name.padEnd(40)} ${perm}`);
         }
         console.log();
       }
@@ -256,22 +284,14 @@ async function permissions(instance, args) {
   if (args.includes('--json')) {
     console.log(JSON.stringify(data));
   } else {
-    const groupsData = await apiRequest(instance, 'GET', '/api/permissions/group');
-    const groupNames = {};
-    groupsData.data.forEach(g => { groupNames[g.id] = g.name; });
-
-    const dbsData = await apiRequest(instance, 'GET', '/api/database');
-    const dbNames = {};
-    (dbsData.data.data || dbsData.data).forEach(d => { dbNames[d.id] = d.name; });
-
     console.log(`Database Permissions (revision ${data.revision}):\n`);
     for (const [gid, dbs] of Object.entries(data.groups)) {
-      console.log(`  ${groupNames[gid] || 'Group ' + gid} (id: ${gid}):`);
+      console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (id: ${gid}):`);
       for (const [did, perms] of Object.entries(dbs)) {
-        const dbName = dbNames[did] || 'DB ' + did;
-        const view = typeof perms['view-data'] === 'string' ? perms['view-data'] : JSON.stringify(perms['view-data'] || '?');
-        const query = typeof perms['create-queries'] === 'string' ? perms['create-queries'] : JSON.stringify(perms['create-queries'] || '?');
-        console.log(`    ${dbName.padEnd(30)} view: ${String(view).padEnd(15)} queries: ${query}`);
+        const dbName = lookups.databases[did] || 'DB ' + did;
+        const view = typeof perms['view-data'] === 'string' ? perms['view-data'] : 'schema-level';
+        const query = typeof perms['create-queries'] === 'string' ? perms['create-queries'] : 'schema-level';
+        console.log(`    ${dbName.padEnd(35)} view: ${view.padEnd(15)} queries: ${query}`);
       }
       console.log();
     }
