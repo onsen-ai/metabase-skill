@@ -252,7 +252,7 @@ All SQL lives in the project directory's `sql/` folder. Never write SQL inline o
 2. **Write card SQL files** — save to `sql/01_card_name.sql`, one file per question. Number-prefix for ordering.
 3. **Test each query** — the default path is to create a temporary card and run `card query <id>`. If the user's project instructions (e.g. CLAUDE.md) specify a database-specific SQL runner (a redshift/snowflake/bigquery/etc. skill), use that instead for direct execution.
 4. **Create Metabase snippets** — `snippet create --name "order_base" --content "$(cat sql/snippets/order_base.sql)"`
-5. **Build card JSON specs** — save to `cards/card_name.json`, referencing the SQL from the file: read `sql/01_card_name.sql` and embed in the card spec's `dataset_query.native.query`
+5. **Build card JSON specs** — save to `cards/card_name.json`, referencing the SQL from the file: read `sql/01_card_name.sql` and embed in the card spec's `dataset_query.native.query` (legacy format) or `dataset_query.stages[0].native` (pMBQL format, v0.57+)
 6. **Create questions** — `card create --from cards/card_name.json`
 
 **SQL formatting conventions:**
@@ -493,6 +493,16 @@ These protect performance and data integrity. Follow them, but use judgement —
 - Always write descriptions — dashboards support markdown, cards should have short summaries
 - Always test SQL before creating Metabase questions
 
+**CLI Usage:**
+- `--patch` and `--from` flags accept **file paths only** — not inline JSON strings. Always write JSON to a file first, then pass the path: `card update <id> --patch /tmp/patch.json`
+- When batch-updating many cards (e.g. descriptions), write all patch files first, then loop through the updates
+
+**Reading Card SQL (pMBQL vs Legacy):**
+- Metabase v0.57+ stores cards in pMBQL format. SQL lives at `dataset_query.stages[0].native` (a string), NOT `dataset_query.native.query`
+- Legacy format (`dataset_query.native.query`) still works for POST/PUT but is NOT what GET returns
+- When extracting SQL from a `card --full` payload, always check for `stages[0].native` first, fall back to `native.query`
+- Template tags are at `stages[0].template-tags` (pMBQL) or `native.template-tags` (legacy)
+
 **General:**
 - Snippets can't be deleted — only archived via `snippet update <id> --archived true`
 - Snippet nesting requires ALL transitive snippets declared as template-tags at the card level
@@ -530,7 +540,7 @@ These show what users can ask and what the skill should do. Use them as patterns
 
 > "Rename all the dashboards in collection 8 to follow our naming convention: '[Domain] Dashboard Name (version)'"
 
-**Workflow:** REORGANIZE → `collection-items 8 --models dashboard` → for each dashboard, `dashboard update <id> --patch '{"name": "..."}'`
+**Workflow:** REORGANIZE → `collection-items 8 --models dashboard` → for each dashboard, write patch to file then `dashboard update <id> --patch patch.json`
 
 ### Editing an Existing Dashboard
 
