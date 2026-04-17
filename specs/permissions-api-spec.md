@@ -43,14 +43,31 @@
 | `/api/permissions/graph` | GET | Full permissions graph (all groups × all databases) |
 | `/api/permissions/graph/db/{db-id}` | GET | Permissions for a specific database |
 | `/api/permissions/graph/group/{group-id}` | GET | Permissions for a specific group |
-| `/api/permissions/graph` | PUT | Batch update permissions (dangerous — see warnings) |
+| `/api/permissions/graph` | PUT | Update permissions (partial updates supported — see below) |
 
 ### Collection Permissions
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/collection/graph` | GET | Collection permissions graph |
-| `/api/collection/graph` | PUT | Batch update collection permissions (dangerous) |
+| `/api/collection/graph` | PUT | Update collection permissions (partial updates supported) |
+| `/api/collection/graph?namespace=snippets` | GET | Snippet folder permissions (Enterprise) |
+| `/api/collection/graph?namespace=snippets` | PUT | Update snippet folder permissions (Enterprise) |
+
+### Application Permissions (Enterprise)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/ee/advanced-permissions/application/graph` | GET | Application permissions graph |
+| `/api/ee/advanced-permissions/application/graph` | PUT | Update application permissions |
+
+### Sandboxing (Enterprise)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/mt/gtap` | GET | List all sandboxes |
+| `/api/mt/gtap` | POST | Create sandbox |
+| `/api/mt/gtap/{id}` | DELETE | Delete sandbox |
 
 ---
 
@@ -236,13 +253,15 @@ The permissions graph defines what each group can do with each database:
 
 ### Permission Keys
 
-| Key | Values | Description |
-|-----|--------|-------------|
-| `view-data` | `"unrestricted"`, `"blocked"` | Can the group see data in this database |
-| `create-queries` | `"query-builder-and-native"`, `"query-builder"`, `"no"` | Query creation access level |
-| `download` | `{"schemas": "full"}`, `{"schemas": "none"}` | Can download query results |
-| `data-model` | `{"schemas": "all"}` | Can edit data model (admin groups) |
-| `details` | `"yes"` | Can view database connection details (admin groups) |
+| Key | Values (Free) | Values (Enterprise) | Description |
+|-----|--------------|--------------------| -------------|
+| `view-data` | `"unrestricted"`, `"legacy-no-self-service"` | + `"blocked"`, `"impersonated"`, per-schema `{"schema": "unrestricted"}`, per-table `{"schema": {"table_id": "unrestricted"}}` | Data visibility |
+| `create-queries` | `"query-builder-and-native"`, `"query-builder"`, `"no"` | + per-schema, per-table variants | Query creation access |
+| `download` | Not configurable | `{"schemas": "full"}`, `{"schemas": "limited"}`, `{"schemas": "none"}` | Download results control |
+| `data-model` | Not configurable | `{"schemas": "all"}`, `{"schemas": "none"}` | Edit table metadata |
+| `details` | Not configurable | `"yes"`, `"no"` | View database connection details |
+
+Note: `blocked` on free instances returns an error: "The blocked permissions functionality is only enabled if you have a premium token with the advanced-permissions feature."
 
 ### GET /api/permissions/graph/db/{db-id}
 
@@ -252,14 +271,33 @@ Returns the graph filtered to a single database. Same structure but only one dat
 
 Returns the graph filtered to a single group. Same structure but only one group key.
 
-### PUT /api/permissions/graph (Batch Update)
+### PUT /api/permissions/graph (Update)
 
-**Warning:** This replaces the ENTIRE permissions graph. You must GET the current graph, modify it, and PUT the whole thing back. Missing groups or databases will have their permissions removed.
+**Supports partial updates.** You only need to send the group being modified — other groups are preserved. The API merges your delta into the existing graph.
+
+Example — change one group's access to one database:
+```json
+PUT /api/permissions/graph?skip-graph=true
+{
+  "revision": 42,
+  "groups": {
+    "53": {
+      "2": {
+        "view-data": "unrestricted",
+        "create-queries": "query-builder"
+      }
+    }
+  }
+}
+// Only group 53 sent — all other groups preserved
+// Response: {"revision": 43}
+```
 
 Query parameters:
-- `revision` — must match the current revision (optimistic locking)
-- `force` — skip revision check (dangerous)
-- `skip-graph` — don't return the updated graph in response
+
+- `revision` — **required** (optimistic locking). Must match current revision. Returns conflict error if mismatched.
+- `skip-graph` — if `true`, response returns only `{"revision": N}` instead of the full graph.
+- `force` — skip revision check. **Never use in production.**
 
 ---
 
@@ -295,13 +333,112 @@ The special key `"root"` represents the root collection.
 |-------|-------------|
 | `"read"` | Can view items in the collection |
 | `"write"` | Can view and edit items (create, move, archive) |
+| `"none"` | No access — collection hidden from the group |
 
-### PUT /api/collection/graph (Batch Update)
+### PUT /api/collection/graph (Update)
 
-Same pattern as permissions graph — GET, modify, PUT back. Must include `revision` or use `force=true`.
+**Supports partial updates.** Same pattern as database permissions — send only the group being modified.
 
-| Field | Type | Required |
-|-------|------|----------|
-| `groups` | object | **yes** |
-| `revision` | integer\|null | yes (unless `force=true`) |
-| `namespace` | string\|null | no |
+```json
+PUT /api/collection/graph?skip-graph=true
+{
+  "revision": 15,
+  "groups": {
+    "5": {
+      "3": "write",
+      "root": "read"
+    }
+  }
+}
+```
+
+Query parameters: `revision` (required), `skip-graph`, `force` — same as database permissions.
+
+---
+
+## Snippet Folder Permissions (Enterprise)
+
+Uses the same collection graph API with `namespace=snippets`:
+
+```
+GET  /api/collection/graph?namespace=snippets
+PUT  /api/collection/graph?namespace=snippets&skip-graph=true
+```
+
+Same structure as collection permissions. Snippet folder IDs listed via `GET /api/collection?namespace=snippets`.
+
+---
+
+## Application Permissions (Enterprise)
+
+```
+GET  /api/ee/advanced-permissions/application/graph
+PUT  /api/ee/advanced-permissions/application/graph
+```
+
+Structure:
+
+```json
+{
+  "revision": 4,
+  "groups": {
+    "2": {"setting": "yes", "monitoring": "yes", "subscription": "yes"},
+    "38": {"setting": "yes", "monitoring": "yes", "subscription": "yes"}
+  }
+}
+```
+
+Permission keys: `setting`, `monitoring`, `subscription` — each `"yes"` or `"no"`.
+
+Partial updates supported — send only the group being modified.
+
+Returns "API endpoint does not exist" on non-Enterprise instances.
+
+---
+
+## Sandboxing / Row & Column Security (Enterprise)
+
+```
+GET    /api/mt/gtap              — List all sandboxes
+POST   /api/mt/gtap              — Create sandbox
+DELETE /api/mt/gtap/{id}         — Delete sandbox
+```
+
+### POST /api/mt/gtap (Create Sandbox)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group_id` | integer | **yes** | Group to sandbox |
+| `table_id` | integer | **yes** | Table to apply sandbox on |
+| `card_id` | integer\|null | no | Optional saved question to use as filter |
+| `attribute_remappings` | object | no | Map user attribute names to field dimensions |
+
+Example with attribute remapping:
+
+```json
+{
+  "group_id": 42,
+  "table_id": 5,
+  "card_id": null,
+  "attribute_remappings": {
+    "country": ["dimension", ["field", 15, null]]
+  }
+}
+```
+
+Sandboxing is a two-step process:
+
+1. Set `view-data` to per-table `"sandboxed"` in the permissions graph
+2. Create the sandbox config via `/api/mt/gtap`
+
+---
+
+## Enterprise vs Free Summary
+
+| API | Free | Enterprise |
+|-----|------|------------|
+| `/api/permissions/graph` GET/PUT | Yes (limited values) | Yes (full values) |
+| `/api/collection/graph` GET/PUT | Yes | Yes |
+| `/api/collection/graph?namespace=snippets` | No | Yes |
+| `/api/ee/advanced-permissions/application/graph` | No | Yes |
+| `/api/mt/gtap` | No | Yes |
