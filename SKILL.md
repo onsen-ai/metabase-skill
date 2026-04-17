@@ -62,9 +62,10 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **Update snippet** | `snippet update <id> [--name <n>] [--content <sql>]` | Updated snippet |
 | **Create collection** | `collection create --name <n> [--parent <id>] [--authority-level official]` | Returns `{id, name}` |
 | **Update collection** | `collection update <id> [--name <n>] [--parent <id>] [--authority-level official\|null]` | Updated collection |
-| **List users** | `users` | Formatted text |
+| **List users** | `users [--admins] [--group <ids>] [--groups-all <ids>]` | Formatted text |
 | **Get user** | `user <id>` | User details |
 | **Create user** | `user create --email <e> [--first <f>] [--last <l>]` | Returns `{id, email}` |
+| **Update user** | `user update <id> [--first] [--last] [--superuser true/false]` | Updated user |
 | **Deactivate user** | `user deactivate <id>` | Confirms deactivation |
 | **List groups** | `groups` | Formatted text |
 | **Get group** | `group <id>` | Group details + members |
@@ -73,6 +74,7 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **Add user to group** | `group add-user <group-id> <user-id>` | Returns membership |
 | **Remove from group** | `group remove-user <membership-id>` | Confirms removal |
 | **View permissions** | `permissions [--database <id>] [--group <id>]` | DB permissions graph |
+| **Native SQL audit** | `permissions --native-sql` | Groups with native SQL access |
 | **View collection perms** | `permissions --collections` | Collection permissions |
 
 All commands prefixed with: `node ${CLAUDE_SKILL_DIR}/scripts/metabase.mjs`

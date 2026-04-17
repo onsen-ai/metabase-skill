@@ -131,20 +131,60 @@ Workflow: `groups` → `permissions` → `permissions --collections` → summari
 
 Workflow: `user deactivate 5`
 
+> "Show me all admins and which groups they're in."
+
+Workflow: `users --admins`
+
+> "Who has both Tech and SQL access?"
+
+Workflow: `users --groups-all 32,53`
+
+> "Which admins are in the Commercial group?"
+
+Workflow: `users --admins --group 28`
+
+> "Which groups have native SQL access to our databases?"
+
+Workflow: `permissions --native-sql`
+
+> "Run a security audit — find empty groups, over-privileged users, external accounts."
+
+Workflow: `groups` (spot empty groups) → `users --admins` (review admin list) → `permissions --native-sql` (review SQL access) → `permissions --collections` (review collection write access) → summarise findings with recommendations.
+
+## User Filtering
+
+The `users` command supports flexible filters that combine:
+
+| Filter | What it does | Example |
+|--------|-------------|---------|
+| `--admins` | Superusers only | `users --admins` |
+| `--group <id>` | Members of a group | `users --group 53` |
+| `--group <id,id>` | Members of ANY group (union) | `users --group 32,53` |
+| `--groups-all <id,id>` | Members of ALL groups (intersection) | `users --groups-all 32,53` |
+| `--query <text>` | Search by name or email | `users --query smith` |
+
+Filters combine: `users --admins --group 28` = admins who are in Commercial.
+
+Output resolves group IDs to names automatically.
+
 ## CLI Quick Reference
 
 | Command | Description |
 |---------|-------------|
 | `users` | List all users |
+| `users --admins` | List superusers only |
+| `users --group <ids>` | List members of group(s) — comma-separated for union |
+| `users --groups-all <ids>` | List members in ALL groups — comma-separated for intersection |
 | `user <id>` | Get user details |
 | `user create --email <e> --first <f> --last <l>` | Create user |
 | `user update <id> [--first] [--last] [--superuser true/false]` | Update user |
 | `user deactivate <id>` | Deactivate user |
 | `groups` | List all permission groups |
-| `group <id>` | Get group details |
+| `group <id>` | Get group details + members |
 | `group create --name <n>` | Create group |
 | `group delete <id>` | Delete group |
 | `group add-user <group-id> <user-id>` | Add user to group |
 | `group remove-user <membership-id>` | Remove user from group |
 | `permissions [--database <id>] [--group <id>]` | View database permissions |
+| `permissions --native-sql` | Show only groups with native SQL access |
 | `permissions --collections` | View collection permissions |
