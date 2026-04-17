@@ -44,8 +44,8 @@ async function users(instance, args) {
       const active = u.is_active ? '' : ' [deactivated]';
       const groups = (u.group_ids || [])
         .filter(gid => gid !== 1)
-        .map(gid => groupNames[gid] || `Group ${gid}`);
-      const groupStr = groups.length ? ` (${groups.join(', ')})` : '';
+        .map(gid => `${groupNames[gid] || 'Unknown'} (${gid})`);
+      const groupStr = groups.length ? ` — ${groups.join(', ')}` : '';
       console.log(`  ${String(u.id).padStart(4)}  ${(u.common_name || u.email).padEnd(30)} ${u.email}${admin}${active}${groupStr}`);
     });
     console.log(`\n${list.length} users`);
@@ -264,10 +264,10 @@ async function permissions(instance, args) {
     } else {
       console.log(`Collection Permissions (revision ${data.revision}):\n`);
       for (const [gid, colls] of Object.entries(data.groups)) {
-        console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (id: ${gid}):`);
+        console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (${gid}):`);
         for (const [cid, perm] of Object.entries(colls)) {
-          const name = lookups.collections[cid] || `collection ${cid}`;
-          console.log(`    ${name.padEnd(40)} ${perm}`);
+          const name = lookups.collections[cid] || `Unknown`;
+          console.log(`    ${String(cid).padStart(5)}  ${name.padEnd(35)} ${perm}`);
         }
         console.log();
       }
@@ -286,12 +286,12 @@ async function permissions(instance, args) {
   } else {
     console.log(`Database Permissions (revision ${data.revision}):\n`);
     for (const [gid, dbs] of Object.entries(data.groups)) {
-      console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (id: ${gid}):`);
+      console.log(`  ${lookups.groups[gid] || 'Group ' + gid} (${gid}):`);
       for (const [did, perms] of Object.entries(dbs)) {
-        const dbName = lookups.databases[did] || 'DB ' + did;
+        const dbName = lookups.databases[did] || 'Unknown';
         const view = typeof perms['view-data'] === 'string' ? perms['view-data'] : 'schema-level';
         const query = typeof perms['create-queries'] === 'string' ? perms['create-queries'] : 'schema-level';
-        console.log(`    ${dbName.padEnd(35)} view: ${view.padEnd(15)} queries: ${query}`);
+        console.log(`    ${String(did).padStart(4)}  ${dbName.padEnd(32)} view: ${view.padEnd(15)} queries: ${query}`);
       }
       console.log();
     }
