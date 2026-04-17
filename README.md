@@ -18,6 +18,8 @@ Works with **any AI coding agent** — Claude Code, Cursor, Codex, and more.
   - [📋 Dashboards](#-dashboards)
   - [🧩 Snippets](#-snippets)
   - [📁 Collections](#-collections)
+  - [👥 Users & Groups](#-users--groups)
+  - [🔐 Permissions](#-permissions)
 - [🔄 Recommended Workflow](#-recommended-workflow)
 - [💬 Example Prompts](#-example-prompts)
 - [📈 What You Can Build](#-what-you-can-build)
@@ -160,6 +162,42 @@ That's it. All commands auto-detect your saved connection. 🎉
 | `collection create` | Create a new collection | `collection create --name "Reports" --parent 3` |
 | `collection update <id>` | Rename, move, or archive | `collection update 8 --name "New Name"` |
 
+### 👥 Users & Groups
+
+| Command | What it does | Example |
+| ------- | ------------ | ------- |
+| `users` | List users (filterable) | `users --admins` or `users --group 32` |
+| `users --groups-all <ids>` | Users in ALL groups (intersection) | `users --groups-all 32,53` |
+| `user <id>` | User details | `user 42` |
+| `user create` | Create a user | `user create --email j@co.com --first Jane --last Smith` |
+| `user update <id>` | Update user | `user update 42 --superuser true` |
+| `user deactivate <id>` | Deactivate (soft delete) | `user deactivate 42` |
+| `groups` | List permission groups | `groups` |
+| `group <id>` | Group details + members | `group 38` |
+| `group create` | Create group | `group create --name "Analytics"` |
+| `group delete <id>` | Delete group | `group delete 42` |
+| `group add-user <gid> <uid>` | Add user to group | `group add-user 38 42` |
+| `group remove-user <mid>` | Remove membership | `group remove-user 123` |
+
+### 🔐 Permissions
+
+| Command | What it does | Example |
+| ------- | ------------ | ------- |
+| `permissions` | View DB permissions graph | `permissions --group 38` |
+| `permissions --native-sql` | Groups with native SQL | `permissions --native-sql` |
+| `permissions --collections` | Collection permissions | `permissions --collections` |
+| `permissions summary` | Full audit in one command | `permissions summary --group 38` |
+| `permissions set` | Set DB permissions (diff + confirm) | `permissions set --group 38 --database 2 --queries no` |
+| `permissions set-collection` | Set collection access | `permissions set-collection --group 38 --collection 8 --access write` |
+| `permissions set-snippets` | Set snippet folder access *(Enterprise)* | `permissions set-snippets --group 38 --folder 704 --access write` |
+| `permissions app` | View app permissions *(Enterprise)* | `permissions app` |
+| `permissions app set` | Set app permissions *(Enterprise)* | `permissions app set --group 38 --subscription yes` |
+| `sandboxes` | List sandboxes *(Enterprise)* | `sandboxes` |
+| `sandbox create` | Create sandbox *(Enterprise)* | `sandbox create --group 38 --table 5` |
+| `sandbox delete <id>` | Delete sandbox *(Enterprise)* | `sandbox delete 1` |
+
+> 💡 Permission writes use **safe partial updates** — only the modified group is sent. Includes diff preview, `--dry-run`, `--yes`, and revision-based optimistic locking.
+
 ### 🌐 Global Options
 
 | Option | Description |
@@ -255,6 +293,38 @@ rates, consistent chart colours, and add descriptions to all cards."
 "Show me the table schema for database 2 — I need to understand the data model."
 ```
 
+### Users, groups & permissions
+
+```
+"Show me all admins and which groups they're in."
+
+"Who has native SQL access to the DWH? List all groups and members."
+
+"Run a permissions audit — show me the full summary of groups, database access, 
+and collection permissions."
+
+"Create a new group called 'Data Analysts', give them query-builder access to 
+the DWH, and add users 42 and 55."
+
+"Block group 80 from accessing the Sample Database."
+
+"Which users are in both the Tech and SQL users groups?"
+
+"Remove all access for group 42 to collection 8."
+```
+
+### Security audit
+
+```
+"Audit our Metabase permissions. Find empty groups, over-privileged users, 
+external accounts, and groups with unnecessary native SQL access."
+
+"Show me a detailed breakdown of what the Commercial group can access — 
+databases, collections, and any Enterprise features."
+
+"List all groups that have write access to the root collection."
+```
+
 ## 📈 What You Can Build
 
 The skill handles real-world BI patterns — KPI scorecards, trading dashboards, performance reports, analyst deep-dives.
@@ -306,14 +376,16 @@ metabase-skill/
 │   ├── metabase.mjs               #   Entry point
 │   ├── test-e2e.mjs               #   Smoke test (29 tests)
 │   └── lib/                       #   Client, commands, utilities
-├── specs/                         # API reference docs (7 files, ~35K tokens)
+├── specs/                         # API reference docs (9 files)
 │   ├── dashboard-api-spec.md      #   Dashboard CRUD, layout, parameters
 │   ├── card-api-spec.md           #   Card CRUD, MBQL, native SQL, field filters
 │   ├── visualization-cookbook.md   #   54 copy-pasteable viz examples
 │   ├── collection-api-spec.md     #   Collection tree, items, CRUD
 │   ├── discovery-api-spec.md      #   Database/table/field metadata, search
 │   ├── snippet-api-spec.md        #   Snippet CRUD, nesting, composition
-│   └── sql-style-guide.md         #   SQL formatting conventions
+│   ├── sql-style-guide.md         #   SQL formatting conventions
+│   ├── permissions-api-spec.md    #   Users, groups, permissions, Enterprise APIs
+│   └── permissions-guide.md       #   Permission workflows, Enterprise vs Free
 ├── assets/templates/              # Design doc, text mockup, HTML mockup templates
 └── evals/                         # 13 test cases (8 read + 5 write)
 ```

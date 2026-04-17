@@ -686,8 +686,12 @@ async function permissionsSummary(instance, args) {
       const dbName = lookups.databases[did] || 'DB ' + did;
       const view = fmt(perms['view-data']);
       const query = fmt(perms['create-queries']);
-      const dl = perms['download']?.schemas ? ` download: ${perms['download'].schemas}` : '';
-      console.log(`    ${String(did).padStart(4)}  ${dbName.padEnd(32)} view: ${view.padEnd(15)} queries: ${query}${dl}`);
+      const extras = [];
+      if (perms['download']?.schemas) extras.push(`download: ${perms['download'].schemas}`);
+      if (perms['data-model']?.schemas) extras.push(`data-model: ${perms['data-model'].schemas}`);
+      if (perms['details']) extras.push(`details: ${perms['details']}`);
+      const extraStr = extras.length ? '  ' + extras.join('  ') : '';
+      console.log(`    ${String(did).padStart(4)}  ${dbName.padEnd(32)} view: ${view.padEnd(15)} queries: ${query}${extraStr}`);
     }
 
     // Collection access
