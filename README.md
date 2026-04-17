@@ -19,6 +19,7 @@ Works with **any AI coding agent** — Claude Code, Cursor, Codex, and more.
   - [🧩 Snippets](#-snippets)
   - [📁 Collections](#-collections)
 - [🔄 Recommended Workflow](#-recommended-workflow)
+- [💬 Example Prompts](#-example-prompts)
 - [📈 What You Can Build](#-what-you-can-build)
 - [🛡️ Safety](#️-safety)
 - [📂 Project Structure](#-project-structure)
