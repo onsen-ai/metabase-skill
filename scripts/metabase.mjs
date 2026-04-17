@@ -57,7 +57,9 @@ try {
     case 'user':
     case 'groups':
     case 'group':
-    case 'permissions': {
+    case 'permissions':
+    case 'sandboxes':
+    case 'sandbox': {
       const { run } = await import('./lib/commands/permissions.mjs');
       await run(instance, command, commandArgs);
       break;

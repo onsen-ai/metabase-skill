@@ -76,6 +76,14 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **View permissions** | `permissions [--database <id>] [--group <id>]` | DB permissions graph |
 | **Native SQL audit** | `permissions --native-sql` | Groups with native SQL access |
 | **View collection perms** | `permissions --collections` | Collection permissions |
+| **Permissions summary** | `permissions summary [--group <id>]` | Full audit in one command |
+| **Set DB permissions** | `permissions set --group <id> --database <id> [--view ...] [--queries ...]` | Diff + confirm |
+| **Set collection perms** | `permissions set-collection --group <id> --collection <id> --access read\|write\|none` | Diff + confirm |
+| **Set snippet perms** | `permissions set-snippets --group <id> --folder <id> --access read\|write\|none` | Enterprise |
+| **App permissions** | `permissions app` / `permissions app set --group <id> [--setting\|--monitoring\|--subscription]` | Enterprise |
+| **List sandboxes** | `sandboxes` | Enterprise |
+| **Create sandbox** | `sandbox create --group <id> --table <id> [--attribute <n> --field <id>]` | Enterprise |
+| **Delete sandbox** | `sandbox delete <id>` | Enterprise |
 
 All commands prefixed with: `node ${CLAUDE_SKILL_DIR}/scripts/metabase.mjs`
 
