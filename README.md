@@ -198,6 +198,62 @@ flowchart TD
 
 > 💡 **SQL is generally preferred** — it's code that can be reviewed, versioned, and reused via snippets.
 
+## 💬 Example Prompts
+
+Here's what you can ask. The skill handles everything from quick one-liners to complex multi-step workflows.
+
+### Creating dashboards
+
+```
+"Build a sales dashboard with revenue KPIs, a monthly trend, and a category breakdown. 
+Use our Redshift DWH. Add date and country filters."
+
+"Create a quick dashboard with 3 scalar cards: total users, active users, churn rate."
+
+"Design a trading performance dashboard — I want to see the full mockup before we build."
+```
+
+### Organising collections
+
+```
+"Our Metabase is a mess. Scan the Commercial collection and suggest how to reorganise it — 
+group dashboards by domain, move orphaned questions into sub-collections."
+
+"Rename all dashboards in collection 8 to follow our naming convention: [Domain] Name (v1.0)"
+
+"Create a new collection structure: Trading > Weekly, Trading > Monthly, Trading > Ad Hoc"
+```
+
+### Working with SQL
+
+```
+"Write a parameterised SQL question showing monthly revenue by category with date and 
+category filters. Use field filter syntax and follow the SQL style guide."
+
+"Create a reusable snippet called 'order_base' that joins orders with products and customers."
+```
+
+### Editing and improving
+
+```
+"Add a Regional Breakdown tab to dashboard 42 with revenue by state and a top stores table."
+
+"Fix the date filter on dashboard 22 — it's not connected to the Revenue by State card."
+
+"Improve the formatting on dashboard 39: currency for revenue columns, percentages for 
+rates, consistent chart colours, and add descriptions to all cards."
+```
+
+### Exploring
+
+```
+"What dashboards do we have about customer analytics?"
+
+"Explain what dashboard 109 does — cards, filters, how they're connected."
+
+"Show me the table schema for database 2 — I need to understand the data model."
+```
+
 ## 📈 What You Can Build
 
 The skill handles real-world BI patterns — KPI scorecards, trading dashboards, performance reports, analyst deep-dives.

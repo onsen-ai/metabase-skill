@@ -502,6 +502,74 @@ These protect performance and data integrity. Follow them, but use judgement —
 
 ---
 
+## Example Prompts
+
+These show what users can ask and what the skill should do. Use them as patterns for recognising intent and choosing the right workflow.
+
+### Creating a Dashboard
+
+> "Build me a sales performance dashboard on our Redshift DWH. I want to see weekly revenue, margin, and order count as KPIs at the top, then a revenue trend line and a category breakdown bar chart. Add a date range filter and a country filter."
+
+**Workflow:** NEW → Design (define metrics/dimensions/filters → text mockup → HTML mockup → approve) → SQL Development (write .sql files for each card, create snippets for shared joins) → Implementation (create collection → snippets → cards → dashboard shell → PUT layout with parameter mappings) → Testing (verify queries, test filters, check formatting).
+
+> "Create a quick dashboard with 3 scalar cards showing total users, active users, and churn rate from our analytics database."
+
+**Workflow:** NEW → skip design (simple enough) → write SQL → create cards → create dashboard → PUT layout. Three cards, no tabs, maybe one date filter.
+
+### Organising Collections
+
+> "Our Metabase is a mess. Can you scan the Commercial collection and suggest how to reorganise it? There are dashboards mixed with random saved questions, no clear structure."
+
+**Workflow:** REORGANIZE →
+1. `collections --tree` to see the full hierarchy
+2. `collection-items <id>` on the target collection to list everything
+3. For each sub-collection, list its contents too
+4. Analyse: group items by domain/theme, identify dashboards vs supporting questions, spot orphaned cards not used in any dashboard
+5. Propose a structure: e.g., "Trading" sub-collection for trading dashboards + their cards, "Ad Hoc" for one-off questions, "Archive" for unused items
+6. After user approves: `collection create` for new sub-collections, then move items by updating their `collection_id` via `card update` / `dashboard update`
+
+> "Rename all the dashboards in collection 8 to follow our naming convention: '[Domain] Dashboard Name (version)'"
+
+**Workflow:** REORGANIZE → `collection-items 8 --models dashboard` → for each dashboard, `dashboard update <id> --patch '{"name": "..."}'`
+
+### Editing an Existing Dashboard
+
+> "Dashboard 42 needs a new tab called 'Regional Breakdown' with a bar chart showing revenue by state and a table of top stores."
+
+**Workflow:** EDIT → `dashboard 42` to audit current state → write SQL for the two new cards → create cards → GET current layout → add new tab + dashcards to the layout → PUT back → verify.
+
+> "The date filter on dashboard 22 isn't connected to the Revenue by State card. Can you fix it?"
+
+**Workflow:** EDIT → `dashboard 22` to see parameter mappings → `dashcard 22 "Revenue by State"` to inspect the card's current mapping → check if the card has a date template tag → if missing, update the card's SQL to add `{{date_range}}` with field filter → then update the dashboard layout to wire the parameter mapping.
+
+### Exploring and Understanding
+
+> "What dashboards do we have about customer analytics? Show me what's in the Customer collection."
+
+**Workflow:** EXPLORE → `search customer --models dashboard,collection` → `collection-items <id>` → summarise findings.
+
+> "Explain what dashboard 109 does — what cards are on it, what filters, how they're connected."
+
+**Workflow:** EXPLORE → `dashboard 109` for summary → `dashcard 109 <name>` for key cards → explain structure, filters, and parameter wiring to the user.
+
+### Working with SQL and Snippets
+
+> "Create a reusable snippet called 'order_base' that joins orders with products and customers, then use it in a revenue-by-category question."
+
+**Workflow:** Write snippet SQL to `sql/snippets/order_base.sql` → `snippet create --name "order_base" --content "$(cat sql/snippets/order_base.sql)"` → write card SQL using `{{snippet: order_base}}` → test → create card.
+
+> "Write me a parameterised SQL question for Metabase that shows monthly revenue with a date range filter and optional category filter."
+
+**Workflow:** Write SQL to file using field filter syntax (`WHERE {{date_range}} [[AND {{category}}]]`) → include template-tags JSON with `alias` for table aliases → test → create card.
+
+### Improving Dashboard Quality
+
+> "Go through dashboard 39 and improve the number formatting, add proper descriptions to all cards, and make sure the chart colours are consistent."
+
+**Workflow:** EDIT → `dashboard 39` to audit → for each card, check viz settings → update dashcard `visualization_settings` (column_settings for currency/percentage, series_settings for colours) → update card descriptions via `card update <id> --patch` → update dashboard description with markdown.
+
+---
+
 ## Reference Files
 
 Read these as needed — don't load all at once:
