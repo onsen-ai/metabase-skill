@@ -53,6 +53,15 @@ try {
       await run(instance, commandArgs);
       break;
     }
+    case 'users':
+    case 'user':
+    case 'groups':
+    case 'group':
+    case 'permissions': {
+      const { run } = await import('./lib/commands/permissions.mjs');
+      await run(instance, command, commandArgs);
+      break;
+    }
     default:
       process.stderr.write(`Unknown command: ${command}\n`);
       printHelp();
@@ -117,5 +126,24 @@ function printHelp() {
   COLLECTIONS
     collection create --name <n> [--parent <id>]
     collection update <id> [--name <n>] [--parent <id>]
+
+  USERS & GROUPS
+    users                           List users
+    user <id>                       Get user details
+    user create --email <e>         Create user
+    user update <id>                Update user
+    user deactivate <id>            Deactivate user
+    groups                          List permission groups
+    group <id>                      Get group details + members
+    group create --name <n>         Create group
+    group delete <id>               Delete group
+    group add-user <gid> <uid>      Add user to group
+    group remove-user <mid>         Remove membership
+
+  PERMISSIONS
+    permissions                     View database permissions graph
+    permissions --database <id>     View perms for one database
+    permissions --group <id>        View perms for one group
+    permissions --collections       View collection permissions
 `);
 }
