@@ -35,6 +35,7 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 
 | Task | Command | Output |
 |------|---------|--------|
+| **List instances** | `instances` | Configured Metabase connections (never prints keys) |
 | **List databases** | `databases` | Formatted text |
 | **List tables + fields** | `tables --database <id>` | Formatted text |
 | **Browse collections** | `collections --tree` | Formatted tree |
@@ -95,6 +96,7 @@ These rules protect the LLM context window and prevent secret leakage. They are 
 
 - **Never load full dashboard/card payloads into context.** Use `card <id>` (summary) or `dashboard <id>` (summary). Full payloads go to files via `--full --out`.
 - **Never print API keys.** The CLI reads keys from env vars or config — they never appear in output.
+- **Never read `~/.metabase-skill/config.json` directly** — it may contain API keys. Use `instances` to list configured connections instead.
 - **Use file-based mutations.** Write JSON payloads to files, then pass them to `card create --from` or `dashboard put --from`. This keeps large JSON out of context.
 - **Dashboard payloads are lightweight without card objects.** The PUT payload only needs layout fields (card_id, row, col, size, viz_settings, parameter_mappings). The embedded `card` object is read-only and ignored. A 30-card dashboard layout is ~3K tokens — small enough to construct directly in context.
 

@@ -110,6 +110,7 @@ That's it. All commands auto-detect your saved connection. 🎉
 
 | Command | What it does | Example |
 | ------- | ------------ | ------- |
+| `instances` | List configured Metabase connections (never prints keys) | `instances` |
 | `databases` | List all databases | `databases` |
 | `tables` | Browse tables with field details | `tables --database 1` |
 | `collections` | Browse collection hierarchy | `collections --tree` |
