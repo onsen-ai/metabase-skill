@@ -65,6 +65,11 @@ try {
       await run(instance, commandArgs);
       break;
     }
+    case 'usage-analytics': {
+      const { run } = await import('./lib/commands/usage-analytics.mjs');
+      await run(instance, commandArgs);
+      break;
+    }
     case 'users':
     case 'user':
     case 'groups':
@@ -140,6 +145,13 @@ function printHelp() {
   COLLECTIONS
     collection create --name <n> [--parent <id>]
     collection update <id> [--name <n>] [--parent <id>]
+
+  USAGE ANALYTICS (Enterprise)
+    usage-analytics                 Discover models + dashboards
+    usage-analytics models          List models with column counts
+    usage-analytics model <name>    Show model column schema
+    usage-analytics query --from <f> Run MBQL query from JSON file
+    usage-analytics query --card <id> Run model card query
 
   USERS & GROUPS
     users                           List users

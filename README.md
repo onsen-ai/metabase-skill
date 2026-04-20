@@ -199,6 +199,18 @@ That's it. All commands auto-detect your saved connection. 🎉
 
 > 💡 Permission writes use **safe partial updates** — only the modified group is sent. Includes diff preview, `--dry-run`, `--yes`, and revision-based optimistic locking.
 
+### 📊 Usage Analytics *(Enterprise)*
+
+| Command | What it does | Example |
+| ------- | ------------ | ------- |
+| `usage-analytics` | Discover analytics models + dashboards | `usage-analytics` |
+| `usage-analytics models` | List all models with column counts | `usage-analytics models` |
+| `usage-analytics model <name>` | Show model column schema | `usage-analytics model "Query log"` |
+| `usage-analytics query --from <file>` | Run MBQL query against analytics DB | `usage-analytics query --from mbql.json` |
+| `usage-analytics query --card <id>` | Run model card query | `usage-analytics query --card 18172 --limit 20` |
+
+> 💡 Native SQL is blocked on the audit database — all queries must use MBQL. The agent constructs MBQL JSON, saves to file, and executes via `query --from`. See `specs/usage-analytics-spec.md` for model schemas and query patterns.
+
 ### 🌐 Global Options
 
 | Option | Description |
@@ -324,6 +336,25 @@ external accounts, and groups with unnecessary native SQL access."
 databases, collections, and any Enterprise features."
 
 "List all groups that have write access to the root collection."
+```
+
+### Usage analytics *(Enterprise)*
+
+```
+"Give me an overview of Metabase adoption — active users, login trends, 
+content growth, and stale content."
+
+"Which dashboards are most popular? Show me views and unique users for 
+the last 30 days."
+
+"What's our query error rate? Which dashboards are slowest?"
+
+"Break down usage into human vs automated vs embedded. How much is 
+driven by subscriptions?"
+
+"Who are the heaviest downloaders? How many rows are being exported weekly?"
+
+"Find all dashboards that haven't been viewed in 90 days — candidates for archival."
 ```
 
 ## 📈 What You Can Build

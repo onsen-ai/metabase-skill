@@ -85,6 +85,11 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **List sandboxes** | `sandboxes` | Enterprise |
 | **Create sandbox** | `sandbox create --group <id> --table <id> [--attribute <n> --field <id>]` | Enterprise |
 | **Delete sandbox** | `sandbox delete <id>` | Enterprise |
+| **Usage analytics overview** | `usage-analytics` | Enterprise — discover models + dashboards |
+| **List analytics models** | `usage-analytics models` | Model names, IDs, column counts |
+| **Inspect model schema** | `usage-analytics model <name>` | Full column schema |
+| **Run MBQL query** | `usage-analytics query --from <file>` | Execute MBQL against analytics DB |
+| **Run model card query** | `usage-analytics query --card <id> [--limit N]` | Browse raw model data |
 
 All commands prefixed with: `node ${CLAUDE_SKILL_DIR}/scripts/metabase.mjs`
 
@@ -166,6 +171,7 @@ Decide the mode before starting work:
 | **EDIT** | Modify an existing dashboard | Run STUDY first → Identify changes → Implement → Test |
 | **EXPLORE** | Browse collections, understand what exists | Discovery commands |
 | **REORGANIZE** | Move items, manage collections | Collection commands |
+| **USAGE-ANALYTICS** | Understand Metabase adoption, find stale content, audit query performance, analyse user activity | Enterprise only — MBQL queries against internal analytics models |
 
 ---
 
@@ -507,6 +513,38 @@ Graduated discovery — adapt depth to the task:
 
 ---
 
+## USAGE-ANALYTICS Workflow
+
+**Enterprise only.** Triggered when the user asks about Metabase adoption, user activity, stale content, query performance, downloads, subscriptions, who's using what, most/least viewed content, human vs automated usage, or any instance-level usage analysis.
+
+### Step 1: Discover models
+
+Run `usage-analytics` to discover available models and their card IDs. Card IDs vary per instance — **never hardcode them**.
+
+### Step 2: Check built-in dashboards first
+
+Metabase ships 8 built-in analytics dashboards (Metabase metrics, Most viewed content, Person overview, Dashboard overview, Question overview, Performance overview, Content with cobwebs, Dashboard subscriptions and alerts). If one of these answers the user's question, point them there instead of running custom queries.
+
+### Step 3: Construct and run MBQL queries
+
+Read `specs/usage-analytics-spec.md` for model schemas, MBQL patterns, and the analytics playbook. **Native SQL is blocked on the audit database** — always use MBQL.
+
+1. Construct MBQL JSON using model card IDs from step 1
+2. Save to a file in the project directory
+3. Run via `usage-analytics query --from <file>`
+4. Present formatted results to the user
+
+For simple model browsing, use `usage-analytics query --card <id> --limit N`.
+
+### Critical rules
+
+- **Always date-filter large models.** View log, Query log, and Activity log have millions of rows. Use 7-day windows for complex queries, 30-day for simple aggregations. Unfiltered queries WILL timeout.
+- **Use `query_source` for human vs automated analysis.** Human: `dashboard`, `ad-hoc`, `question`, `collection`. Automated: `pulse`, `dashboard-subscription`, `cache-refresh`. Embedded: `embedded-dashboard`. Downloads: `csv-download`, `xlsx-download`, etc.
+- **Use Content model's `question_is_native` for SQL vs MBQL counts.** The Query log's `is_native` tracks execution type, not card definition — subscriptions running native SQL cards report `is_native: false`.
+- **"External User" in View log** = embedded dashboard views, not a real user. `null` user = system/background.
+
+---
+
 ## Defensive Guardrails
 
 These protect performance and data integrity. Follow them, but use judgement — if the user explicitly asks for something that bends a rule, explain the trade-off and proceed if they confirm.
@@ -661,3 +699,4 @@ Read these as needed — don't load all at once:
 | `specs/sql-style-guide.md` | Writing SQL | Formatting conventions, complete examples |
 | `specs/permissions-api-spec.md` | Managing users/groups/permissions | User CRUD, group CRUD, membership, permissions graph |
 | `specs/permissions-guide.md` | Permission workflows | How permissions work, common workflows, safety warnings |
+| `specs/usage-analytics-spec.md` | Usage analytics queries (Enterprise) | 15 model schemas, MBQL patterns, analytics playbook, performance rules |
