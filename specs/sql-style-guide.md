@@ -12,7 +12,7 @@ Formatting conventions for SQL queries backing Metabase dashboards. Follow these
 - **Header comment block** at top of every file
 - **One column per line** in SELECT, right-padded with spaces to align AS aliases
 - **JOIN on new line**, USING when FK names match, ON with conditions indented
-- **GROUP BY positional references** for simple cases: `GROUP BY 1, 2`
+- **GROUP BY:** use positional references (`GROUP BY 1, 2`) for Postgres/Redshift. For **H2 (Metabase Sample Database)**, positional GROUP BY is NOT supported — use explicit column expressions or aliases instead (e.g., `GROUP BY p.CATEGORY, FORMATDATETIME(o.CREATED_AT, 'yyyy-MM')`). When writing SQL that must work across database engines, prefer explicit expressions.
 - **Explicit AS** for all column aliases
 - **NULLIF** around denominators in division to prevent divide-by-zero
 - **FROM on its own line** with table alias
@@ -158,3 +158,29 @@ WHERE {{date_range}}                          -- field filter (dimension type)
   AND status = 'active'                       -- hardcoded filter
   [[AND region = {{region}}]]                 -- optional basic variable
 ```
+
+## H2 (Sample Database) Compatibility
+
+The Metabase Sample Database uses H2, which is stricter than Postgres/Redshift. When writing SQL for H2:
+
+| Pattern | Postgres/Redshift | H2 |
+|---------|-------------------|-----|
+| Positional GROUP BY | `GROUP BY 1, 2` ✅ | ❌ Use explicit expressions |
+| Column alias in GROUP BY | `GROUP BY "Revenue"` ✅ | ❌ Use the full expression |
+| Date truncation | `DATE_TRUNC('month', col)` | `FORMATDATETIME(col, 'yyyy-MM')` |
+| Type casting | `col :: DATE` | `CAST(col AS DATE)` |
+| Reserved words as aliases | Usually fine | Quote with `"Month"` |
+
+Example — H2-compatible GROUP BY:
+```sql
+-- WRONG for H2:
+GROUP BY 1, 2
+
+-- CORRECT for H2:
+GROUP BY p.CATEGORY, FORMATDATETIME(o.CREATED_AT, 'yyyy-MM')
+
+-- ALSO CORRECT (repeat the full expression):
+GROUP BY CAST(o.CREATED_AT AS DATE)
+```
+
+If targeting only Postgres/Redshift, positional GROUP BY is fine. If the SQL might run on the Sample Database (H2), use explicit expressions.

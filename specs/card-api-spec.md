@@ -230,7 +230,17 @@ Used when `query_type` is `"query"`. Structured query using Metabase Query Langu
 
 Stages are flat (not nested) — each stage operates on the result of the previous.
 
-**Format on creation:** The API accepts both legacy format (`{"database": 1, "type": "query", "query": {...}}`) and pMBQL format (`{"lib/type": "mbql/query", "stages": [...]}`) on POST and PUT. Metabase internally stores pMBQL (v0.57+). When using pMBQL, all `lib/uuid` values **must be valid UUID format** (e.g., `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"`) — invalid UUIDs cause silent query execution failures.
+**Always use pMBQL format for card creation.** On Metabase v0.57+, the legacy format (`{"database": 1, "type": "native", "native": {...}}`) is **broken for native SQL cards** — it silently drops `database_id`, causing a NOT NULL constraint error on create. MBQL cards may still accept legacy format, but pMBQL is the only reliable format for both query types.
+
+```json
+// CORRECT: pMBQL format (always use this)
+{"lib/type": "mbql/query", "database": 1, "stages": [{"lib/type": "mbql.stage/native", "native": "SELECT ...", "template-tags": {...}}]}
+
+// BROKEN on v0.57+: legacy native format (do NOT use)
+{"database": 1, "type": "native", "native": {"query": "SELECT ...", "template-tags": {...}}}
+```
+
+When using pMBQL, all `lib/uuid` values **must be valid UUID format** (e.g., `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"`) — invalid UUIDs cause silent query execution failures.
 
 ### Data Sources (mutually exclusive per stage)
 
@@ -410,6 +420,8 @@ Direction: `"asc"` or `"desc"`. Can reference fields or aggregation UUIDs.
 ## dataset_query — Native SQL Format
 
 Used when `query_type` is `"native"`. Raw SQL with optional template tags.
+
+**Important:** Always use pMBQL format (`lib/type: "mbql/query"` with `stages`). The legacy format (`"type": "native", "native": {"query": ...}`) is broken on Metabase v0.57+ for card creation — it silently drops `database_id`.
 
 ### Structure
 

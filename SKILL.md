@@ -100,6 +100,22 @@ These rules protect the LLM context window and prevent secret leakage. They are 
 - **Use file-based mutations.** Write JSON payloads to files, then pass them to `card create --from` or `dashboard put --from`. This keeps large JSON out of context.
 - **Dashboard payloads are lightweight without card objects.** The PUT payload only needs layout fields (card_id, row, col, size, viz_settings, parameter_mappings). The embedded `card` object is read-only and ignored. A 30-card dashboard layout is ~3K tokens — small enough to construct directly in context.
 
+## When to Ask the User
+
+Do not make assumptions about design choices. The user is the decision-maker — you are the builder. **Ask the user** whenever:
+
+- **Choosing which instance to use** — if multiple instances are configured, ask which one to target
+- **Dashboard scope and audience** — who will use it, what questions should it answer
+- **Metrics and dimensions** — which calculations, which breakdowns. Present your suggestions and ask for confirmation
+- **Layout decisions** — number of tabs, card arrangement, chart types. Show a mockup and ask for approval
+- **Filter design** — which filters, defaults, cascading behavior
+- **SQL vs MBQL** — explain the tradeoff and ask the user's preference if unclear
+- **Visualization choices** — chart type, colours, formatting, when there are multiple valid options
+- **Before creating anything in Metabase** — always confirm the plan before executing API calls that create or modify objects
+- **When something fails or behaves unexpectedly** — report the issue and ask how to proceed, don't silently retry
+
+Use the AskUserQuestion tool (or equivalent) generously. A 30-second question saves 10 minutes of rework.
+
 ## Project Directory
 
 All working files (design docs, mockups, SQL, card specs, layout JSON) must be saved to a **project directory** — never `/tmp`. This ensures SQL can be version controlled, reviewed, and audited.
@@ -155,11 +171,23 @@ Decide the mode before starting work:
 
 ## NEW Dashboard Workflow
 
+### Before you start: Ask the user
+
+Before writing any code or creating anything, **ask the user** how they want to approach this:
+
+> "I can build this dashboard step by step. Would you like to:
+> 1. **Design first** — I'll define the metrics, create a mockup, and get your approval before building (recommended for complex dashboards)
+> 2. **Build directly** — I'll go straight to creating the SQL and cards (faster for simple dashboards)
+> 
+> Which approach?"
+
+**Default to design-first** for dashboards with 5+ cards, multiple tabs, or complex filters. Only skip design if the user explicitly says to build directly, or if the request is very simple (e.g., "create a single scalar card showing total orders").
+
 ### Phase 1: Design
 
-The design phase is available when the user wants to plan before building. **It's not mandatory** — if the user knows what they want and says "just build it", skip straight to SQL Development or Implementation. Use judgement: a simple 3-card dashboard doesn't need a formal design process; a 30-card multi-tab scorecard does.
+The design phase has three stages: **Define → Mockup → Approve**. Each stage requires presenting your work to the user and getting explicit approval before moving to the next.
 
-When used, the design phase has three stages: **Define → Mockup → Approve**. The user can exit at any stage and move to implementation.
+**Critical: Do not skip stages silently.** If you produce a text mockup, show it to the user and ask "Does this layout look right? Should I proceed to the HTML mockup, or do you want changes?" Do not assume approval.
 
 #### Stage 1: Requirements & Definitions
 
@@ -193,11 +221,14 @@ Then formally define the dashboard's data model:
 | Date Range | date/all-options | past30days~ | yes | All cards |
 | Category | string/= | — | no | Category cards |
 
-Present to the user and get approval before proceeding to mockup.
+**Present the metrics/dimensions/filters tables to the user and explicitly ask:**
+> "Here are the metrics, dimensions, and filters I've defined. Does this cover what you need? Any additions or changes before I create the layout mockup?"
+
+**Do not proceed to mockup until the user confirms.** This is the most important approval gate — getting the data model wrong means everything built on top is wrong.
 
 #### Stage 2: Progressive Mockup
 
-Build the mockup in three progressive levels. Get user approval at each level.
+Build the mockup progressively. **After each level, show the result to the user and ask for approval before advancing.** Do not skip from text mockup straight to building in Metabase.
 
 **Level 1: Plain Text Mockup**
 
@@ -220,9 +251,12 @@ Filters: [Date Range ▼ past 30 days]  [Category ▼ all]
 
 Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-text-template.md` for the template. Save to `<project-dir>/design/mockup.md`.
 
+**After creating the text mockup, ask the user:**
+> "Here's the text layout mockup. Does this card arrangement work? Any cards to add/remove/resize? Should I proceed to the HTML mockup?"
+
 **Level 2: HTML Mockup**
 
-After text mockup is approved, generate a standalone HTML file with:
+After the user approves the text mockup, generate a standalone HTML file with:
 - Correct 24-column grid layout
 - Card placeholders with titles, display type labels, and sample values
 - Filter bar with parameter names and types
@@ -231,9 +265,12 @@ After text mockup is approved, generate a standalone HTML file with:
 
 Read `${CLAUDE_SKILL_DIR}/assets/templates/mockup-html-template.html` for the base template. Customize it for the specific dashboard. Save as `<project-dir>/design/mockup.html` — the user opens it in a browser.
 
+**After creating the HTML mockup, ask the user:**
+> "I've saved the HTML mockup to `design/mockup.html` — open it in your browser to review. Does the layout look right? Should I proceed to build it in Metabase, or do you want changes?"
+
 **Level 3: Metabase Mockup with Sample Data**
 
-After HTML mockup is approved, create the actual dashboard in Metabase with:
+After the user approves the HTML mockup, create the actual dashboard in Metabase with:
 - Simple cards using basic queries (e.g., `SELECT 'Gadgets' AS category, 42000 AS revenue`) or real queries with LIMIT
 - Correct layout, tab structure, and filter parameters wired up
 - Visualization settings applied (chart types, number formatting, colors)
@@ -276,7 +313,7 @@ All SQL lives in the project directory's `sql/` folder. Never write SQL inline o
 2. **Write card SQL files** — save to `sql/01_card_name.sql`, one file per question. Number-prefix for ordering.
 3. **Test each query** — the default path is to create a temporary card and run `card query <id>`. If the user's project instructions (e.g. CLAUDE.md) specify a database-specific SQL runner (a redshift/snowflake/bigquery/etc. skill), use that instead for direct execution.
 4. **Create Metabase snippets** — `snippet create --name "order_base" --content "$(cat sql/snippets/order_base.sql)"`
-5. **Build card JSON specs** — save to `cards/card_name.json`, referencing the SQL from the file: read `sql/01_card_name.sql` and embed in the card spec's `dataset_query.native.query` (legacy format) or `dataset_query.stages[0].native` (pMBQL format, v0.57+)
+5. **Build card JSON specs** — save to `cards/card_name.json`. Always use pMBQL format: embed the SQL in `dataset_query.stages[0].native` (not the legacy `dataset_query.native.query` which is broken on v0.57+)
 6. **Create questions** — `card create --from cards/card_name.json`
 
 **SQL formatting conventions:**
@@ -346,7 +383,7 @@ Execute in this order:
    snippet create --name "order_base" --content "$(cat sql/snippet_order_base.sql)"
    ```
 
-3. **Create questions** — for each SQL file, build a card spec JSON:
+3. **Create questions** — for each SQL file, build a card spec JSON. **Always use pMBQL format** (legacy format is broken for native SQL on Metabase v0.57+):
    ```json
    {
      "name": "Revenue by Category",
@@ -354,12 +391,13 @@ Execute in this order:
      "display": "bar",
      "visualization_settings": {},
      "dataset_query": {
+       "lib/type": "mbql/query",
        "database": <db_id>,
-       "type": "native",
-       "native": {
-         "query": "<SQL from file>",
+       "stages": [{
+         "lib/type": "mbql.stage/native",
+         "native": "<SQL from file>",
          "template-tags": { ... }
-       }
+       }]
      }
    }
    ```
@@ -519,16 +557,17 @@ These protect performance and data integrity. Follow them, but use judgement —
 - SQL column aliases must be human-readable Title Case with quoted identifiers: `AS "Revenue"` not `AS REVENUE` or `AS revenue`
 - Always write descriptions — dashboards support markdown, cards should have short summaries
 - Always test SQL before creating Metabase questions
+- **H2 (Sample Database)** does not support positional `GROUP BY 1, 2` — use explicit column expressions. Also no `DATE_TRUNC` — use `FORMATDATETIME(col, 'yyyy-MM')`. See `specs/sql-style-guide.md` H2 compatibility section.
 
 **CLI Usage:**
 - `--patch` and `--from` flags accept **file paths only** — not inline JSON strings. Always write JSON to a file first, then pass the path: `card update <id> --patch /tmp/patch.json`
 - When batch-updating many cards (e.g. descriptions), write all patch files first, then loop through the updates
 
-**Reading Card SQL (pMBQL vs Legacy):**
-- Metabase v0.57+ stores cards in pMBQL format. SQL lives at `dataset_query.stages[0].native` (a string), NOT `dataset_query.native.query`
-- Legacy format (`dataset_query.native.query`) still works for POST/PUT but is NOT what GET returns
-- When extracting SQL from a `card --full` payload, always check for `stages[0].native` first, fall back to `native.query`
-- Template tags are at `stages[0].template-tags` (pMBQL) or `native.template-tags` (legacy)
+**Native SQL Card Creation (CRITICAL):**
+- **Always use pMBQL format** for creating native SQL cards. The legacy format (`"type": "native", "native": {"query": ...}`) is **broken on Metabase v0.57+** — it silently drops `database_id`, causing `NOT NULL constraint` errors on create
+- Correct format: `{"lib/type": "mbql/query", "database": <id>, "stages": [{"lib/type": "mbql.stage/native", "native": "<SQL>", "template-tags": {...}}]}`
+- When reading card SQL from `card --full`, SQL lives at `dataset_query.stages[0].native` (a string), NOT `dataset_query.native.query`
+- Template tags are at `stages[0].template-tags`
 
 **General:**
 - Snippets can't be deleted — only archived via `snippet update <id> --archived true`
