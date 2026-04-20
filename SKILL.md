@@ -395,7 +395,11 @@ Execute in this order:
      "name": "Revenue by Category",
      "collection_id": <collection_id>,
      "display": "bar",
-     "visualization_settings": {},
+     "visualization_settings": {
+       "graph.dimensions": ["date_column", "breakout_column"],
+       "graph.metrics": ["value_column"],
+       "graph.x_axis.scale": "timeseries"
+     },
      "dataset_query": {
        "lib/type": "mbql/query",
        "database": <db_id>,
@@ -589,6 +593,13 @@ These protect performance and data integrity. Follow them, but use judgement —
 - Don't include `dataset_query: {}` in heading `virtual_card` — omit it entirely
 - Heading cards need `"dashcard.background": false` for transparent section heading style
 - Correct heading recipe: `{"dashcard.background": false, "virtual_card": {"name": null, "display": "heading", "visualization_settings": {}, "archived": false}, "text": "Section Title"}`
+
+**Visualization Settings on Card Creation:**
+- **Never create chart cards (line, bar, area, pie, row, combo) with `"visualization_settings": {}`** — Metabase cannot reliably auto-detect axes for native SQL cards. Always set `graph.dimensions`, `graph.metrics`, and `graph.x_axis.scale` at the card level during creation. Without these, Metabase may put the wrong column on the X-axis (e.g., showing users on X instead of dates).
+- Scalar cards can use `{}` safely — they have only one value to display.
+- Table cards can use `{}` — column ordering comes from the SQL SELECT clause.
+- Dashcard-level viz settings override card-level, but the card level must have the correct baseline for the merge to work. If the card has no `graph.dimensions` at all, dashcard overrides may not anchor correctly.
+- For timeseries charts, always include `"graph.x_axis.scale": "timeseries"` at the card level to force date axis detection.
 
 **SQL & Documentation:**
 - Enforce SQL style guide from the start, not as cleanup — read `specs/sql-style-guide.md` before writing any SQL
