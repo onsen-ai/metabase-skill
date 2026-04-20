@@ -24,6 +24,14 @@ Metabase has **two places** where visualization_settings live:
 
 When Metabase renders a dashcard, it deep-merges: `card.visualization_settings` + `dashcard.visualization_settings`.
 
+**CRITICAL for native SQL charts:** Never create line/bar/area/pie/row/combo cards with
+`"visualization_settings": {}`. Metabase cannot reliably auto-detect which columns map to
+which axes for native SQL cards. Always set `graph.dimensions`, `graph.metrics`, and
+`graph.x_axis.scale` at the **card level** during creation. Without these, Metabase may
+guess wrong (e.g., putting a categorical column on the X-axis instead of the date column).
+Dashcard-level overrides deep-merge on top, but if the card level has no axis config at all,
+the merge has nothing to anchor to. Scalar and table cards are safe with `{}`.
+
 ### column_settings Key Format
 
 Column settings are keyed by a JSON-encoded array:
