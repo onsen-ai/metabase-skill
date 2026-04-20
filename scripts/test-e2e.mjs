@@ -71,6 +71,8 @@ const sampleDb = dbs?.find(d => d.name === 'Sample Database');
 assert('sample database exists', !!sampleDb, 'needed for tests');
 if (!sampleDb) { console.log('\nCannot continue without Sample Database.\n'); process.exit(1); }
 
+const tablesJson = runJson(`tables --database ${sampleDb.id} --json`);
+const ordersTable = tablesJson?.find(t => t.name === 'ORDERS');
 const tablesText = run(`tables ${sampleDb.id}`);
 assert('tables (text)', tablesText.includes('ORDERS') && tablesText.includes('fields'));
 
@@ -104,12 +106,13 @@ console.log('');
 // --- CARDS ---
 console.log('CARDS');
 
+const sourceTable = ordersTable?.id || 5;
 const cardFile = tmpFile('card', {
   name: 'E2E Test Card',
   collection_id: null,
   display: 'scalar',
   visualization_settings: {},
-  dataset_query: { database: sampleDb.id, type: 'query', query: { 'source-table': 5, aggregation: [['count']] } },
+  dataset_query: { database: sampleDb.id, type: 'query', query: { 'source-table': sourceTable, aggregation: [['count']] } },
 });
 const cardResult = runJson(`card create --from ${cardFile}`);
 assert('card create', cardResult?.id > 0, JSON.stringify(cardResult));
@@ -184,6 +187,52 @@ if (collResult?.id) {
 
   const archiveResult = runJson(`collection update ${collResult.id} --archived true`);
   assert('collection archive', archiveResult?.archived === true);
+}
+
+console.log('');
+
+// --- USAGE ANALYTICS (Enterprise only — skip if not available) ---
+console.log('USAGE ANALYTICS');
+
+const uaOverview = run('usage-analytics');
+const isEnterprise = !uaOverview.includes('Enterprise') && !uaOverview.includes('Error');
+
+if (isEnterprise) {
+  assert('usage-analytics overview', uaOverview.includes('Usage Analytics') && uaOverview.includes('models'));
+
+  const uaModels = run('usage-analytics models');
+  assert('usage-analytics models', uaModels.includes('Usage Analytics Models') && uaModels.includes('People'));
+
+  const uaModel = run('usage-analytics model People');
+  assert('usage-analytics model inspect', uaModel.includes('People') && uaModel.includes('user_id') && uaModel.includes('is_active'));
+
+  const uaModelsJson = runJson('usage-analytics models --json');
+  assert('usage-analytics models --json', Array.isArray(uaModelsJson) && uaModelsJson.length > 0 && uaModelsJson[0]?.columns > 0);
+
+  const peopleCardId = uaModelsJson?.find(m => m.name === 'People')?.id;
+  if (peopleCardId) {
+    const uaCardQuery = run(`usage-analytics query --card ${peopleCardId} --limit 3`);
+    assert('usage-analytics query --card', uaCardQuery.includes('user_id') && uaCardQuery.includes('Showing 3 of'));
+
+    const mbqlFile = `/tmp/metabase-e2e-ua-mbql.json`;
+    writeFileSync(mbqlFile, JSON.stringify({
+      type: 'query',
+      query: {
+        'source-table': `card__${peopleCardId}`,
+        aggregation: [['count']],
+        breakout: [['field', 'is_active', { 'base-type': 'type/Boolean' }]],
+      },
+    }));
+    tmpFiles.push(mbqlFile);
+
+    const uaMbql = run(`usage-analytics query --from ${mbqlFile}`);
+    assert('usage-analytics query --from (MBQL)', uaMbql.includes('is_active') && uaMbql.includes('count'));
+
+    const uaMbqlJson = runJson(`usage-analytics query --from ${mbqlFile} --json`);
+    assert('usage-analytics query --from --json', uaMbqlJson?.rows?.length > 0 && uaMbqlJson?.columns?.includes('is_active'));
+  }
+} else {
+  console.log('  (skipped — not Enterprise)');
 }
 
 console.log('');
