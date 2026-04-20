@@ -593,6 +593,21 @@ These protect performance and data integrity. Follow them, but use judgement —
 - Don't include `dataset_query: {}` in heading `virtual_card` — omit it entirely
 - Heading cards need `"dashcard.background": false` for transparent section heading style
 - Correct heading recipe: `{"dashcard.background": false, "virtual_card": {"name": null, "display": "heading", "visualization_settings": {}, "archived": false}, "text": "Section Title"}`
+- **Dynamic text cards**: text card `text` can include `{{tag_name}}` placeholders that render the current value of a dashboard parameter. Wire them via the dashcard's `parameter_mappings` using target `["text-tag", "tag_name"]` (and `card_id: null`, since virtual). The `tag_name` is arbitrary — it just has to match between `{{...}}` in the text and the target's second element. Metabase renders filter values with user-friendly labels ("Previous 7 days"), not raw parameter strings — so this is the right way to make subtitles reflect the active Pre/Post, Date Range, or category filters instead of hardcoding them.
+  - Recipe:
+    ```json
+    {
+      "card_id": null,
+      "visualization_settings": {
+        "virtual_card": {"display": "text", "name": null, "dataset_query": {}, "visualization_settings": {}},
+        "text": "Comparing **{{post}}** vs **{{pre}}**"
+      },
+      "parameter_mappings": [
+        {"parameter_id": "<pre-param-id>",  "card_id": null, "target": ["text-tag", "pre"]},
+        {"parameter_id": "<post-param-id>", "card_id": null, "target": ["text-tag", "post"]}
+      ]
+    }
+    ```
 
 **Visualization Settings on Card Creation:**
 - **Never create chart cards (line, bar, area, pie, row, combo) with `"visualization_settings": {}`** — Metabase cannot reliably auto-detect axes for native SQL cards. Always set `graph.dimensions`, `graph.metrics`, and `graph.x_axis.scale` at the card level during creation. Without these, Metabase may put the wrong column on the X-axis (e.g., showing users on X instead of dates).
