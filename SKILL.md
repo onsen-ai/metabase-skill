@@ -172,6 +172,46 @@ Decide the mode before starting work:
 | **EXPLORE** | Browse collections, understand what exists | Discovery commands |
 | **REORGANIZE** | Move items, manage collections | Collection commands |
 | **USAGE-ANALYTICS** | Understand Metabase adoption, find stale content, audit query performance, analyse user activity | Enterprise only — MBQL queries against internal analytics models |
+| **ADMIN** | Manage users, groups, data/collection/snippet permissions, sandboxes | Permissions commands |
+
+**After choosing the mode, load the full spec bundle for it (see below) before starting work.** Don't defer spec reading to the point you need it — you will write incorrect payloads, miss required fields, or skip gotchas.
+
+---
+
+## Reference Loading Strategy
+
+**Rule:** once you've identified the mode, read every spec in its bundle with the Read tool **before starting the workflow**. Don't cherry-pick. Don't defer. Loading upfront is what makes this skill perform correctly — deferred reads lead to broken payloads and missed gotchas.
+
+If a task crosses modes (e.g., an EDIT that also changes permissions), load both bundles.
+
+### Use-case → spec bundle matrix
+
+| Mode / use case | Specs to load upfront |
+|---|---|
+| **NEW / EDIT / STUDY dashboards** — build, modify, or deeply understand a dashboard | `dashboard-api-spec.md`, `card-api-spec.md`, `visualization-cookbook.md`, `sql-style-guide.md`, `snippet-api-spec.md`, `collection-api-spec.md`, `discovery-api-spec.md` |
+| **EXPLORE / REORGANIZE** — browse, search, move, rename | `discovery-api-spec.md`, `collection-api-spec.md`, `card-api-spec.md` |
+| **Standalone SQL / card / snippet work** — single question or shared snippet, no dashboard | `card-api-spec.md`, `sql-style-guide.md`, `snippet-api-spec.md` |
+| **USAGE-ANALYTICS** — Metabase adoption, stale content, query performance, user activity (Enterprise) | `usage-analytics-spec.md` |
+| **ADMIN** — users, groups, DB / collection / snippet permissions, sandboxes | `permissions-api-spec.md`, `permissions-guide.md` |
+
+All spec paths are `${CLAUDE_SKILL_DIR}/specs/<file>`. Read every file in the chosen bundle at the start of the task.
+
+**Assets** (`${CLAUDE_SKILL_DIR}/assets/templates/`) are loaded opportunistically — pull in `mockup-text-template.md`, `mockup-html-template.html`, or `design-doc.md` only at the design stage that needs them.
+
+### What each spec covers
+
+| Spec | Content |
+|---|---|
+| `specs/dashboard-api-spec.md` | Dashboard CRUD, layout, parameters, PUT rules |
+| `specs/card-api-spec.md` | Card CRUD, MBQL, native SQL, parameterized SQL, template tags |
+| `specs/visualization-cookbook.md` | 54 copy-pasteable viz settings examples |
+| `specs/collection-api-spec.md` | Tree navigation, items, CRUD |
+| `specs/discovery-api-spec.md` | Database metadata, tables, fields, search |
+| `specs/snippet-api-spec.md` | Snippet CRUD, nesting rules |
+| `specs/sql-style-guide.md` | SQL formatting conventions, H2 compatibility, examples |
+| `specs/permissions-api-spec.md` | User CRUD, group CRUD, membership, permissions graph |
+| `specs/permissions-guide.md` | Permission workflows, common recipes, safety warnings |
+| `specs/usage-analytics-spec.md` | 15 analytics model schemas, MBQL patterns, playbook (Enterprise) |
 
 ---
 
@@ -712,17 +752,4 @@ These show what users can ask and what the skill should do. Use them as patterns
 
 ## Reference Files
 
-Read these as needed — don't load all at once:
-
-| Reference | When to read | Content |
-|-----------|-------------|---------|
-| `specs/dashboard-api-spec.md` | Creating/editing dashboards | Dashboard CRUD, layout, parameters, PUT rules |
-| `specs/card-api-spec.md` | Creating/editing cards | Card CRUD, MBQL, native SQL, parameterized SQL, template tags |
-| `specs/visualization-cookbook.md` | Setting up chart formatting | 54 copy-pasteable viz settings examples |
-| `specs/collection-api-spec.md` | Managing collections | Tree navigation, items, CRUD |
-| `specs/discovery-api-spec.md` | Finding databases/tables/fields | Database metadata, search |
-| `specs/snippet-api-spec.md` | Creating/managing snippets | Snippet CRUD, nesting |
-| `specs/sql-style-guide.md` | Writing SQL | Formatting conventions, complete examples |
-| `specs/permissions-api-spec.md` | Managing users/groups/permissions | User CRUD, group CRUD, membership, permissions graph |
-| `specs/permissions-guide.md` | Permission workflows | How permissions work, common workflows, safety warnings |
-| `specs/usage-analytics-spec.md` | Usage analytics queries (Enterprise) | 15 model schemas, MBQL patterns, analytics playbook, performance rules |
+See the **Reference Loading Strategy** section near the top of this file for the use-case → spec matrix and the upfront-loading rule.
