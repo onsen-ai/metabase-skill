@@ -11,7 +11,10 @@ These endpoints are read-only discovery APIs used to explore databases, resolve 
 ```
 GET  /api/database                      — list all databases
 GET  /api/database/:id/metadata         — get tables + fields for a database
+POST /api/database/:id/sync_schema      — pick up newly added tables/columns
 GET  /api/search                        — universal search across all models
+POST /api/field/:id/rescan_values       — refresh cached distinct values (dropdowns)
+POST /api/field/:id/discard_values      — clear cached field values
 ```
 
 Authentication: `X-API-Key: <token>` header.
@@ -21,6 +24,9 @@ Authentication: `X-API-Key: <token>` header.
 | `/api/database` | GET | List all databases the user can access |
 | `/api/database/{id}` | GET | Get a single database by ID |
 | `/api/database/{id}/metadata` | GET | Get all tables and fields for a database |
+| `/api/database/{id}/sync_schema` | POST | Trigger a schema sync — Metabase picks up newly added tables and columns |
+| `/api/field/{id}/rescan_values` | POST | Rescan distinct values for one field (repopulates dropdown filter values) |
+| `/api/field/{id}/discard_values` | POST | Clear cached distinct values for one field |
 | `/api/search` | GET | Search for items across all model types |
 | `/api/search/force-reindex` | POST | Trigger immediate search reindexing (admin) |
 
@@ -220,6 +226,44 @@ The response includes `data` (array of result items), `total` (match count), `li
 Additional fields: `collection_authority_level`, `collection_position`, `effective_location`, `bookmark`, `last_editor_id`, `last_editor_common_name`, `updated_at`, `moderated_status`, `verified`, `context`, `pk_ref`.
 
 Each result includes a `scores` array with relevance scoring factors (e.g. `recency`, `text`, `view-count`, `user-recency`, `model`). Each score object has `score`, `name`, `weight`, and `contribution` fields. Results are returned sorted by total relevance.
+
+---
+
+## Metadata Maintenance
+
+### POST /api/database/{id}/sync_schema
+
+Triggers an asynchronous schema sync on the database. Metabase connects to the source, enumerates tables/columns, and updates its metadata cache. Required after adding new columns to a table whose data you want to use in field filters — without a sync, the new column is invisible to Metabase.
+
+**Body:** none. **Response:** `{"status": "ok"}`.
+
+Async: the actual sync happens in the background. A subsequent `GET /api/database/{id}/metadata` may need a few seconds to reflect the new fields. Poll `tables --database <id>` or hit the metadata endpoint until the new columns appear.
+
+**CLI:** `database sync-schema <id>`
+
+### POST /api/field/{id}/rescan_values
+
+Rescans distinct values for a single field and caches them. The cache powers dropdown pickers on field-filter parameters. When you add rows with new categorical values (e.g., a new `variant_code`), the dropdown won't show them until this rescan completes.
+
+**Body:** none. **Response:** `{"status": "success"}`.
+
+**CLI:** `field rescan-values <id>`
+
+### POST /api/field/{id}/discard_values
+
+Clears the cached distinct values for a field. Useful when the field's semantics change (e.g., renamed categories) and you want the next rescan to build the list from scratch rather than merging with stale entries.
+
+**Body:** none. **Response:** `{"status": "success"}`.
+
+**CLI:** `field discard-values <id>`
+
+### Typical workflow after adding a new column
+
+1. Add the column in your source database.
+2. `database sync-schema <db_id>` — Metabase learns about the new column.
+3. Poll `tables --database <db_id> | grep <column_name>` until the field_id appears.
+4. If you want the column to populate a dropdown filter: `field rescan-values <field_id>`.
+5. Now the field can be referenced in field-filter template tags.
 
 ---
 

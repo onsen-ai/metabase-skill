@@ -65,6 +65,16 @@ try {
       await run(instance, commandArgs);
       break;
     }
+    case 'database': {
+      const { runDatabase } = await import('./lib/commands/metadata.mjs');
+      await runDatabase(instance, commandArgs);
+      break;
+    }
+    case 'field': {
+      const { runField } = await import('./lib/commands/metadata.mjs');
+      await runField(instance, commandArgs);
+      break;
+    }
     case 'usage-analytics': {
       const { run } = await import('./lib/commands/usage-analytics.mjs');
       await run(instance, commandArgs);
@@ -145,6 +155,11 @@ function printHelp() {
   COLLECTIONS
     collection create --name <n> [--parent <id>]
     collection update <id> [--name <n>] [--parent <id>]
+
+  METADATA MAINTENANCE
+    database sync-schema <id>       Pick up newly added tables/columns
+    field rescan-values <id>        Refresh field-value cache (dropdowns)
+    field discard-values <id>       Clear field-value cache
 
   USAGE ANALYTICS (Enterprise)
     usage-analytics                 Discover models + dashboards

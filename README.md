@@ -116,6 +116,9 @@ That's it. All commands auto-detect your saved connection. 🎉
 | `collections` | Browse collection hierarchy | `collections --tree` |
 | `collection-items` | List items in a collection | `collection-items 8 --models card,dashboard` |
 | `search` | Find anything by name | `search revenue --models card` |
+| `database sync-schema <id>` | Pick up newly added tables/columns | `database sync-schema 3` |
+| `field rescan-values <id>` | Refresh cached dropdown values | `field rescan-values 3665` |
+| `field discard-values <id>` | Clear cached dropdown values | `field discard-values 3665` |
 
 > 💡 Discovery commands output **formatted text** by default. Add `--json` for structured output.
 

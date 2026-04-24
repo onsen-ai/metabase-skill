@@ -1290,6 +1290,161 @@ Use `"card.title": "        "` (spaces) to effectively hide the title while keep
 
 ---
 
+## Native SQL Pivot via Table Viz
+
+The `pivot` display type is MBQL-only. Native SQL cards error with `"Pivot tables can only be used with aggregated queries."` For a pivoted layout on a native query, use `display: "table"` with pivot settings.
+
+**SQL returns long format** — one column for rows, one for pivoted columns, one for the cell value:
+
+```sql
+SELECT  rubric AS "Rubric",
+        variant_code AS "Variant",
+        score AS "Score"
+FROM    /* ... */
+```
+
+**Card viz settings:**
+
+```json
+{
+  "display": "table",
+  "visualization_settings": {
+    "table.pivot": true,
+    "table.pivot_column": "Variant",
+    "table.cell_column": "Score",
+    "table.column_formatting": [
+      {
+        "columns": ["Score"],
+        "type": "range",
+        "colors": ["#ED6E6E", "#FFFFFF", "#84BB4C"],
+        "min_type": "custom",
+        "max_type": "custom",
+        "min_value": 3.4,
+        "max_value": 4.7
+      }
+    ],
+    "column_settings": {
+      "[\"name\",\"Score\"]": { "number_style": "decimal", "decimals": 2 }
+    }
+  }
+}
+```
+
+- `table.pivot_column` — values of this column become output columns (horizontal)
+- `table.cell_column` — values of this column fill the pivoted cells
+- Any remaining column becomes the row header
+- To transpose (swap which dimension is row vs column), swap `table.pivot_column` for the other dimension's name
+
+---
+
+## Scatter Chart with Series Breakout
+
+Scatter multi-series follows the same pattern as line/bar — a second element in `graph.dimensions` is treated as the breakout. Each breakout value gets its own colour and legend entry.
+
+```json
+{
+  "display": "scatter",
+  "visualization_settings": {
+    "graph.dimensions": ["$ / Msg", "Variant"],
+    "graph.metrics":    ["Composite"],
+    "scatter.bubble":   "Messages",
+    "graph.x_axis.scale": "linear",
+    "graph.y_axis.auto_range": false,
+    "graph.y_axis.min": 4.0,
+    "graph.y_axis.max": 4.75,
+    "column_settings": {
+      "[\"name\",\"$ / Msg\"]": {
+        "number_style": "currency",
+        "currency": "USD",
+        "currency_style": "symbol",
+        "decimals": 4
+      }
+    }
+  }
+}
+```
+
+The SQL must return one row per (x, breakout) combination — e.g., `SELECT variant_code AS "Variant", AVG(cost_total) AS "$ / Msg", AVG(composite_score) AS "Composite", COUNT(*) AS "Messages" FROM ... GROUP BY 1`.
+
+---
+
+## Static-list Dropdown on a Basic Variable
+
+Dashboard parameters backed by a basic `text` template tag don't auto-populate values (nothing to scan). A static list gives the user a dropdown of curated options. This is also the fallback for filtering on **derived columns** — CASE expressions and computed buckets can't be field-filtered because they have no Metabase field ID.
+
+**Template tag on the card** (basic `text` variable):
+
+```json
+{
+  "length_bucket": {
+    "id": "...",
+    "name": "length_bucket",
+    "display-name": "Session Length Bucket",
+    "type": "text"
+  }
+}
+```
+
+SQL references it as an `IN (...)` clause: `[[AND length_bucket IN ({{length_bucket}})]]`.
+
+**Dashboard parameter** (both `values_query_type` and `values_source_type` must be set):
+
+```json
+{
+  "id": "c5e74bd6",
+  "name": "Session Length",
+  "slug": "length_bucket",
+  "type": "string/=",
+  "sectionId": "string",
+  "isMultiSelect": true,
+  "values_query_type": "list",
+  "values_source_type": "static-list",
+  "values_source_config": {
+    "values": [
+      ["xshort (1-5)"],
+      ["short (6-10)"],
+      ["medium (11-20)"],
+      ["long (21-50)"],
+      ["xlong (51+)"]
+    ]
+  }
+}
+```
+
+**Parameter mapping** on the dashcard uses a `variable` target (not `dimension`):
+
+```json
+{
+  "parameter_id": "c5e74bd6",
+  "card_id": 123,
+  "target": ["variable", ["template-tag", "length_bucket"]]
+}
+```
+
+**Gotcha:** omitting `values_query_type: "list"` leaves the parameter as a free-text input even with static values populated. This is the most common "why is my dropdown a text box" failure.
+
+**Value format:** each entry in `values` is either `[value]` (label = value) or `[value, label]` (custom display).
+
+---
+
+## Text Card Sizing (Markdown Content)
+
+Text cards (virtual cards with `display: "text"`) render markdown. `size_y` needs to accommodate the rendered height, which is hard to predict in advance.
+
+Rough heuristic for the 24-column grid:
+
+| Content | Approx. `size_y` |
+| --- | --- |
+| 1-line subtitle | 1 |
+| Short paragraph (≤3 lines) | 2 |
+| Paragraph + 3-4 bullets | 4 |
+| Paragraph + bullets + short markdown table (≤5 rows) | 6-8 |
+| Multi-section explainer with tables | 10+ |
+
+When in doubt, start at 4-6 and iterate. Markdown tables add significant height — plan for 2 rows per table row plus 2 for the header. If the card scrolls internally or clips, increase `size_y` and re-PUT.
+
+---
+
 ## Quick Reference: Common Colour Palette
 
 These hex colours appear most frequently across the production dashboards:

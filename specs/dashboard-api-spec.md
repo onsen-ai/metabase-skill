@@ -186,7 +186,7 @@ Dashboard-level filter parameters. Each parameter defines a filter that can be m
 | `filteringParameters` | array of strings | no | IDs of parameters this one depends on (cascading filters) |
 | `sectionId` | string | no | UI section grouping (`string`, `number`, `date`, `boolean`, `id`, `location`, `temporal-unit`) |
 | `isMultiSelect` | boolean | no | Allow multiple selections (for string types) |
-| `values_query_type` | string | no | How values are fetched: `list`, `search`, `none` |
+| `values_query_type` | string | no | How values are fetched: `list`, `search`, `none`. **Required as `"list"` to make `static-list`-backed parameters render as a dropdown** — see gotcha below. |
 | `values_source_type` | string\|null | no | Value source: `null` (auto), `card`, `static-list` |
 | `values_source_config` | object | no | Source config: `{values: [[val,label],...]}` or `{card_id, value_field, label_field}` |
 | `temporal_units` | array | no | Allowed temporal units for temporal-unit type |
@@ -210,14 +210,50 @@ Dashboard-level filter parameters. Each parameter defines a filter that can be m
 | `date/range` | Date range | `"2024-01-01~2024-01-31"` |
 | `date/month-year` | Month picker | `"2024-01"` |
 | `date/quarter-year` | Quarter picker | `"Q1-2024"` |
-| `date/relative` | Relative date | `"past30days"` |
-| `date/all-options` | Full date picker | `"past10days~"` (relative date syntax) |
+| `date/relative` | Relative date | `"past30days"` — excludes today; append `~` (`"past30days~"`) to include today's partial data |
+| `date/all-options` | Full date picker | `"past10days~"` (relative date syntax) — **tilde matters**: without it, today's rows are excluded from the window |
 | `boolean/=` | Boolean filter | `true` |
 | `temporal-unit` | Temporal unit selector | `"day"` |
 
 Note: these same type strings are also valid as `widget-type` values on template tags (e.g. `date/month-year` can appear as a template tag widget-type).
 
 Note: `category` is a legacy parameter type that predates the `sectionId` system. Category parameters typically lack `sectionId` and `isMultiSelect` fields.
+
+### Parameter Value Sources
+
+A dashboard parameter can fetch the set of selectable values from three sources, controlled by `values_source_type`:
+
+| `values_source_type` | `values_source_config` | Source |
+| --- | --- | --- |
+| `null` (auto) | — | Metabase inspects the underlying field(s) the parameter is mapped to and auto-scans distinct values. Works for field-filter-backed parameters. Requires `field rescan-values <id>` if the values cache is stale. |
+| `"static-list"` | `{values: [[value], [value, label], ...]}` | Hardcoded values. Best for parameters mapped to basic `text` variables or derived columns where there's no concrete field to scan. |
+| `"card"` | `{card_id, value_field, label_field}` | Values come from a saved question. |
+
+**Dropdown rendering requires `values_query_type: "list"`.** Even with `values_source_type: "static-list"` and a populated `values_source_config.values`, Metabase will fall back to a free-text input if `values_query_type` is not set to `"list"`. This is the #1 "my dropdown doesn't show" gotcha.
+
+```json
+// ✅ CORRECT — shows as dropdown
+{
+  "id": "...",
+  "slug": "length_bucket",
+  "type": "string/=",
+  "isMultiSelect": true,
+  "values_query_type": "list",
+  "values_source_type": "static-list",
+  "values_source_config": {
+    "values": [["xshort (1-5)"], ["short (6-10)"], ["medium (11-20)"]]
+  }
+}
+
+// ❌ WRONG — renders as free-text input despite the static list
+{
+  "slug": "length_bucket",
+  "type": "string/=",
+  "values_source_type": "static-list",
+  "values_source_config": { "values": [["xshort (1-5)"], /* ... */] }
+  // missing values_query_type: "list"
+}
+```
 
 ---
 

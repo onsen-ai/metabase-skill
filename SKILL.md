@@ -85,6 +85,9 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 | **List sandboxes** | `sandboxes` | Enterprise |
 | **Create sandbox** | `sandbox create --group <id> --table <id> [--attribute <n> --field <id>]` | Enterprise |
 | **Delete sandbox** | `sandbox delete <id>` | Enterprise |
+| **Sync database schema** | `database sync-schema <id>` | Pick up newly added tables/columns (field filters need this) |
+| **Rescan field values** | `field rescan-values <id>` | Refresh cached distinct values that populate filter dropdowns |
+| **Discard field values** | `field discard-values <id>` | Clear cached field values |
 | **Usage analytics overview** | `usage-analytics` | Enterprise — discover models + dashboards |
 | **List analytics models** | `usage-analytics models` | Model names, IDs, column counts |
 | **Inspect model schema** | `usage-analytics model <name>` | Full column schema |
@@ -626,7 +629,15 @@ These protect performance and data integrity. Follow them, but use judgement —
 
 **Field Filters:**
 - Field filter syntax: `WHERE {{tag}}` not `WHERE column = {{tag}}`
-- `alias` is REQUIRED on field filter template tags when SQL uses table aliases. Without it, Metabase generates fully-qualified column names (e.g. `PUBLIC.ORDERS.CREATED_AT`) which fail when the query uses aliases like `ORDERS o`
+- `alias` is REQUIRED on field filter template tags when SQL uses table aliases, and its value is the **fully-qualified `alias.column`** — e.g. `"alias": "cm.created_at"` when the query has `FROM chat_messages cm`. Setting `"alias": "cm"` alone does NOT work. See card-api-spec.md "Table Alias Requirement" for details.
+- Field filters can't target derived columns (CASE expressions, computed buckets). Use a basic `text` variable with a static-list dropdown at the dashboard level instead — see visualization-cookbook.md.
+- Relative-date defaults: `past7days` = [7 days ago, yesterday] (excludes today); `past7days~` = [7 days ago, now] (includes today's partial data). The tilde matters — variants that only produced data today will silently vanish without it.
+
+**Native SQL Display-Type Constraints:**
+- The `pivot` display type is **MBQL-only**. Native SQL cards will error with `"Pivot tables can only be used with aggregated queries"`. For a pivoted layout on native SQL, use `display: "table"` + `"table.pivot": true` + `table.pivot_column` + `table.cell_column`. See visualization-cookbook.md.
+
+**Dashboard Parameter Dropdowns:**
+- For a `string/=` parameter with `values_source_type: "static-list"` to render as a dropdown (instead of a free-text input), the parameter also needs `"values_query_type": "list"`. Without it Metabase falls back to the text widget even when static values are configured.
 
 **Virtual Cards:**
 - `heading` type: plain text only, no markdown. `text` type: markdown supported

@@ -183,7 +183,7 @@ Key differences:
 | `smartscalar` | Number | Number with trend comparison |
 | `number` | Number | Number display (alias for scalar) |
 | `combo` | Chart | Combined line + bar |
-| `pivot` | Data | Pivot table |
+| `pivot` | Data | Pivot table — **MBQL only**. Native SQL cards get "Pivot tables can only be used with aggregated queries." For a pivoted layout on native SQL, use `table` display with `table.pivot: true` + `table.pivot_column` + `table.cell_column` (see visualization-cookbook.md). |
 | `funnel` | Chart | Funnel chart |
 | `map` | Spatial | Geographic map |
 | `scatter` | Chart | Scatter plot (`scatter.bubble`: string\|null — column for bubble size) |
@@ -582,6 +582,8 @@ The `widget-type` determines the filter UI. Common types:
 | `number/!=` | Number fields | Number not equal |
 | `number/between` | Number fields | Number range |
 
+> **Dropdown rendering gotcha.** When this field filter is exposed as a dashboard parameter backed by a static list of values, the DASHBOARD parameter also needs `values_query_type: "list"`. Without it Metabase falls back to a free-text input even when `values_source_type: "static-list"` is configured. See dashboard-api-spec.md "Parameter Value Sources" and visualization-cookbook.md "Static-list dropdown on a basic variable".
+
 #### Default Value Formats (observed in production)
 
 | Type | Default Format | Example |
@@ -589,7 +591,7 @@ The `widget-type` determines the filter UI. Common types:
 | No default | `null` or absent | — |
 | Boolean | Array with single value | `[false]` |
 | String | `null` (no default) or string | `null` |
-| Date (relative) | Relative date string | `"past30days~"`, `"past7days"`, `"past7days-from-7days"` |
+| Date (relative) | Relative date string | `"past30days~"`, `"past7days"`, `"past7days-from-7days"` — **tilde matters**: `past7days` = [7d ago → yesterday] (excludes today); `past7days~` = [7d ago → now] (includes today's partial data) |
 | Text variable | Array | `["model"]` |
 | Temporal unit | String | `"day"` |
 
@@ -597,9 +599,10 @@ The `widget-type` determines the filter UI. Common types:
 
 When using field filters with table aliases, CTEs, or subqueries, you **must** specify the `alias` field in the template tag. This is REQUIRED — without it, Metabase generates fully-qualified column names like `PUBLIC.ORDERS.CREATED_AT` or `PUBLIC.PRODUCTS.CATEGORY`, which fail when the query uses table aliases (e.g. `ORDERS o`, `PRODUCTS p`).
 
-**Error you'll see without `alias`:** `Column "PUBLIC.ORDERS.CREATED_AT" not found` — this means Metabase expanded the field filter to its fully-qualified form, but the SQL engine can't resolve it because the table was aliased.
+**`alias` is the fully-qualified `alias.column` string — NOT just the alias.**
 
 ```json
+// ✅ CORRECT — SQL has FROM products p
 {
   "category": {
     "type": "dimension",
@@ -609,9 +612,24 @@ When using field filters with table aliases, CTEs, or subqueries, you **must** s
     "widget-type": "string/="
   }
 }
+
+// ❌ WRONG — "just the alias" does NOT work. At query time Metabase expands to
+// `WHERE "p" = ...` and the DB errors with "column \"p\" does not exist".
+{ "alias": "p", ... }
+
+// ❌ WRONG — leaving alias out produces schema-qualified names like
+// `WHERE public.products.category = ...` which fails on aliased queries.
+{ /* no alias */ }
 ```
 
-The `alias` value must match the table alias used in your SQL. For example, if your SQL has `FROM PRODUCTS p`, use `"alias": "p.category"`. If your SQL has `FROM ORDERS o`, use `"alias": "o.created_at"`.
+**Errors you'll see:**
+
+- No `alias`: `invalid reference to FROM-clause entry for table "products"` / `column "PUBLIC.ORDERS.CREATED_AT" not found`
+- `alias` is just the alias: `column "p" does not exist` (or equivalent column-not-found error)
+
+The `alias` value must match the _table alias + column_ used in your SQL. If your SQL has `FROM products p`, use `"alias": "p.category"`. If your SQL has `FROM orders o INNER JOIN sessions s USING (session_id)`, use `"alias": "o.created_at"` for an `orders.created_at` filter.
+
+**Field filters cannot target derived columns.** The field filter requires a concrete Metabase field ID. `CASE WHEN ... END` expressions, bucketed values, or any computed column cannot be used. For filters on derived values, use a basic `text` variable with a static-list dropdown at the dashboard-parameter level (see visualization-cookbook.md "Static-list dropdown on a basic variable").
 
 #### Dashboard Parameter → Field Filter Wiring
 
