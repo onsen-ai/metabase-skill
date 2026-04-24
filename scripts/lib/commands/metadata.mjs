@@ -15,9 +15,11 @@ export async function runDatabase(instance, args) {
   switch (sub) {
     case 'sync-schema':
       return syncSchema(instance, rest);
-    default:
-      process.stderr.write(`Unknown database subcommand: ${sub}\nUsage: database sync-schema <id>\n`);
+    default: {
+      const prefix = sub ? `Unknown database subcommand: ${sub}\n` : '';
+      process.stderr.write(`${prefix}Usage: database sync-schema <id>\n`);
       process.exit(1);
+    }
   }
 }
 
@@ -30,9 +32,11 @@ export async function runField(instance, args) {
       return rescanValues(instance, rest);
     case 'discard-values':
       return discardValues(instance, rest);
-    default:
-      process.stderr.write(`Unknown field subcommand: ${sub}\nUsage: field rescan-values <id> | field discard-values <id>\n`);
+    default: {
+      const prefix = sub ? `Unknown field subcommand: ${sub}\n` : '';
+      process.stderr.write(`${prefix}Usage: field rescan-values <id> | field discard-values <id>\n`);
       process.exit(1);
+    }
   }
 }
 
