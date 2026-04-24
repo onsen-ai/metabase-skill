@@ -33,70 +33,120 @@ The setup wizard supports multiple instances (e.g., production, staging) with tw
 
 ## Quick Reference
 
-| Task | Command | Output |
-|------|---------|--------|
-| **List instances** | `instances` | Configured Metabase connections (never prints keys) |
-| **List databases** | `databases` | Formatted text |
-| **List tables + fields** | `tables --database <id>` | Formatted text |
-| **Browse collections** | `collections --tree` | Formatted tree |
-| **List collection items** | `collection-items <id>` | Formatted text |
-| **Search everything** | `search <query> [--models card,dashboard]` | Formatted text |
-| **Card summary** | `card <id>` | Compact JSON |
-| **Card full → file** | `card <id> --full --out <file>` | Writes to file |
-| **Create card** | `card create --from <file>` | Returns `{id, name}` |
-| **Update card** | `card update <id> --patch <file>` | GET-merge-PUT |
-| **Delete card** | `card delete <id>` | Confirms deletion |
-| **Copy card** | `card copy <id> [--collection <id>]` | Returns new `{id, name}` |
-| **Execute card query** | `card query <id> [--out <file>]` | Results (20 rows or file) |
-| **Dashboard summary** | `dashboard <id>` | Compact JSON |
-| **Dashboard layout → file** | `dashboard <id> --layout --out <file>` | Lightweight layout (no card objects) |
-| **Dashboard full → file** | `dashboard <id> --full --out <file>` | Full payload to file |
-| **Create dashboard** | `dashboard create --from <file>` | Returns `{id, name}` |
-| **Direct PUT dashboard** | `dashboard put <id> --from <file>` | LLM-constructed payload |
-| **Update dashboard** | `dashboard update <id> --patch <file>` | GET-merge-PUT |
-| **Delete dashboard** | `dashboard delete <id>` | Confirms deletion |
-| **Copy dashboard** | `dashboard copy <id>` | Returns new `{id, name}` |
-| **Extract dashcard** | `dashcard <dashboard-id> <index\|name>` | Single dashcard config |
-| **List snippets** | `snippets` | Formatted text |
-| **Get snippet** | `snippet <id>` | Snippet content |
-| **Create snippet** | `snippet create --name <n> --content <sql>` | Returns `{id, name}` |
-| **Update snippet** | `snippet update <id> [--name <n>] [--content <sql>]` | Updated snippet |
-| **Create collection** | `collection create --name <n> [--parent <id>] [--authority-level official]` | Returns `{id, name}` |
-| **Update collection** | `collection update <id> [--name <n>] [--parent <id>] [--authority-level official\|null]` | Updated collection |
-| **List users** | `users [--admins] [--group <ids>] [--groups-all <ids>]` | Formatted text |
-| **Get user** | `user <id>` | User details |
-| **Create user** | `user create --email <e> [--first <f>] [--last <l>]` | Returns `{id, email}` |
-| **Update user** | `user update <id> [--first] [--last] [--superuser true/false]` | Updated user |
-| **Deactivate user** | `user deactivate <id>` | Confirms deactivation |
-| **List groups** | `groups` | Formatted text |
-| **Get group** | `group <id>` | Group details + members |
-| **Create group** | `group create --name <n>` | Returns `{id, name}` |
-| **Delete group** | `group delete <id>` | Confirms deletion |
-| **Add user to group** | `group add-user <group-id> <user-id>` | Returns membership |
-| **Remove from group** | `group remove-user <membership-id>` | Confirms removal |
-| **View permissions** | `permissions [--database <id>] [--group <id>]` | DB permissions graph |
-| **Native SQL audit** | `permissions --native-sql` | Groups with native SQL access |
-| **View collection perms** | `permissions --collections` | Collection permissions |
-| **Permissions summary** | `permissions summary [--group <id>]` | Full audit in one command |
-| **Set DB permissions** | `permissions set --group <id> --database <id> [--view ...] [--queries ...]` | Diff + confirm |
-| **Set collection perms** | `permissions set-collection --group <id> --collection <id> --access read\|write\|none` | Diff + confirm |
-| **Set snippet perms** | `permissions set-snippets --group <id> --folder <id> --access read\|write\|none` | Enterprise |
-| **App permissions** | `permissions app` / `permissions app set --group <id> [--setting\|--monitoring\|--subscription]` | Enterprise |
-| **List sandboxes** | `sandboxes` | Enterprise |
-| **Create sandbox** | `sandbox create --group <id> --table <id> [--attribute <n> --field <id>]` | Enterprise |
-| **Delete sandbox** | `sandbox delete <id>` | Enterprise |
-| **Sync database schema** | `database sync-schema <id>` | Pick up newly added tables/columns (field filters need this) |
-| **Rescan field values** | `field rescan-values <id>` | Refresh cached distinct values that populate filter dropdowns |
-| **Discard field values** | `field discard-values <id>` | Clear cached field values |
-| **Usage analytics overview** | `usage-analytics` | Enterprise — discover models + dashboards |
-| **List analytics models** | `usage-analytics models` | Model names, IDs, column counts |
-| **Inspect model schema** | `usage-analytics model <name>` | Full column schema |
-| **Run MBQL query** | `usage-analytics query --from <file>` | Execute MBQL against analytics DB |
-| **Run model card query** | `usage-analytics query --card <id> [--limit N]` | Browse raw model data |
-
 All commands prefixed with: `node ${CLAUDE_SKILL_DIR}/scripts/metabase.mjs`
 
-Global options: `--instance <name>` to override default instance, `--json` for structured output on discovery commands.
+**Global options** (work on every command):
+- `--instance <name>` — override the default instance
+- `--json` — structured JSON output (supported on discovery, list, and get commands; ignored elsewhere)
+
+### Discovery
+
+| Command | What it does | Example |
+|---|---|---|
+| `instances` | List configured Metabase connections (never prints keys) | `instances` |
+| `databases` | List all databases | `databases` |
+| `tables --database <id>` | List tables + fields | `tables --database 1` |
+| `collections [--tree]` | Browse collection hierarchy | `collections --tree` |
+| `collection-items <id> [--models card,dashboard]` | List items in a collection | `collection-items 8 --models dashboard` |
+| `search <query> [--models ...]` | Find anything by name | `search revenue --models card` |
+
+### Metadata Maintenance
+
+| Command | What it does | Example |
+|---|---|---|
+| `database sync-schema <id>` | Pick up newly added tables/columns (run after schema changes; field filters need this) | `database sync-schema 3` |
+| `field rescan-values <id>` | Refresh cached distinct values that populate filter dropdowns | `field rescan-values 3665` |
+| `field discard-values <id>` | Clear cached field values | `field discard-values 3665` |
+
+### Cards (Questions)
+
+| Command | What it does | Example |
+|---|---|---|
+| `card <id>` | Compact summary (safe for context — includes `result_columns`, `referenced_snippets`, `template_tags`) | `card 402` |
+| `card <id> --full --out <file>` | Full payload to file (never stdout) | `card 402 --full --out card.json` |
+| `card create --from <file>` | Create from JSON spec | `card create --from spec.json` |
+| `card update <id> --patch <file>` | GET-merge-PUT smart patching | `card update 402 --patch patch.json` |
+| `card delete <id>` | Delete card | `card delete 402` |
+| `card copy <id> [--collection <id>]` | Duplicate card | `card copy 402 --collection 8` |
+| `card query <id> [--out <file>]` | Execute query, return 20 rows (or full result to file) | `card query 402` |
+
+### Dashboards
+
+| Command | What it does | Example |
+|---|---|---|
+| `dashboard <id>` | Summary with tabs, cards, `repeated_card_ids`, per-dashcard `overrides` | `dashboard 22` |
+| `dashboard <id> --layout --out <file>` | Lightweight layout (strips `card` objects; ~3K tokens for 30 cards) | `dashboard 22 --layout --out layout.json` |
+| `dashboard <id> --full --out <file>` | Full payload to file | `dashboard 22 --full --out full.json` |
+| `dashboard create --from <file>` | Create shell from JSON | `dashboard create --from shell.json` |
+| `dashboard put <id> --from <file>` | Direct PUT of LLM-constructed payload | `dashboard put 22 --from layout.json` |
+| `dashboard update <id> --patch <file>` | GET-merge-PUT smart patching | `dashboard update 22 --patch patch.json` |
+| `dashboard delete <id>` | Delete dashboard | `dashboard delete 22` |
+| `dashboard copy <id> [--collection <id>]` | Duplicate dashboard | `dashboard copy 22 --collection 8` |
+| `dashcard <dashboard-id> <index\|name>` | Inspect one dashcard's full config (use for repeated cards with overrides) | `dashcard 22 "Revenue"` |
+
+### Snippets
+
+| Command | What it does | Example |
+|---|---|---|
+| `snippets` | List all snippets | `snippets` |
+| `snippet <id>` | Show snippet SQL content | `snippet 6` |
+| `snippet create --name <n> --content <sql> [--collection <id>] [--description <d>]` | Create reusable SQL fragment | `snippet create --name order_base --content "SELECT ..."` |
+| `snippet update <id> [--name <n>] [--content <sql>] [--description <d>] [--archived true\|false]` | Update or archive snippet (snippets can't be hard-deleted) | `snippet update 6 --archived true` |
+
+### Collections
+
+| Command | What it does | Example |
+|---|---|---|
+| `collection create --name <n> [--parent <id>] [--description <d>] [--authority-level official]` | Create collection | `collection create --name "Reports" --parent 3` |
+| `collection update <id> [--name <n>] [--parent <id>] [--description <d>] [--archived true\|false] [--authority-level official\|null]` | Rename, move, archive, or promote to official | `collection update 8 --authority-level official` |
+
+### Users & Groups
+
+| Command | What it does | Example |
+|---|---|---|
+| `users [--query <q>] [--status active\|deactivated\|all] [--admins] [--group <ids>] [--groups-all <ids>]` | List users with filters (comma-separated group IDs; `--groups-all` is intersection) | `users --groups-all 32,53` |
+| `user <id>` | User details | `user 42` |
+| `user create --email <e> [--first <f>] [--last <l>]` | Create user | `user create --email j@co.com --first Jane` |
+| `user update <id> [--first <f>] [--last <l>] [--email <e>] [--superuser true\|false]` | Update user | `user update 42 --superuser true` |
+| `user deactivate <id>` | Deactivate (soft delete) | `user deactivate 42` |
+| `groups` | List permission groups | `groups` |
+| `group <id>` | Group details + members | `group 38` |
+| `group create --name <n>` | Create group | `group create --name "Analytics"` |
+| `group delete <id>` | Delete group | `group delete 42` |
+| `group add-user <group-id> <user-id>` | Add user to group | `group add-user 38 42` |
+| `group remove-user <membership-id>` | Remove membership by membership ID (shown in `group <id>` output) | `group remove-user 123` |
+
+### Permissions
+
+| Command | What it does | Example |
+|---|---|---|
+| `permissions [--database <id>] [--group <id>]` | View DB permissions graph | `permissions --group 38` |
+| `permissions --native-sql` | Audit which groups have native SQL access | `permissions --native-sql` |
+| `permissions --collections` | View collection permissions | `permissions --collections` |
+| `permissions summary [--group <id>]` | Full audit (DB + collections + native SQL + membership) | `permissions summary --group 38` |
+| `permissions set --group <id> --database <id> [--view ...] [--queries ...] [--download ...] [--data-model ...] [--details ...] [--dry-run] [--yes]` | Set DB permissions (shows diff, confirms) | `permissions set --group 38 --database 2 --queries no` |
+| `permissions set-collection --group <id> --collection <id> --access read\|write\|none` | Set collection access | `permissions set-collection --group 38 --collection 8 --access write` |
+
+#### Permissions — Enterprise
+
+| Command | What it does | Example |
+|---|---|---|
+| `permissions set-snippets --group <id> --folder <id> --access read\|write\|none` | Set snippet-folder access | `permissions set-snippets --group 38 --folder 704 --access write` |
+| `permissions app` | View app permissions (settings, monitoring, subscription) | `permissions app` |
+| `permissions app set --group <id> [--setting ...] [--monitoring ...] [--subscription ...]` | Set app permissions | `permissions app set --group 38 --subscription yes` |
+| `sandboxes` | List sandboxes | `sandboxes` |
+| `sandbox create --group <id> --table <id> [--attribute <n> --field <id>]` | Create sandbox (attribute + field together define the row-level filter) | `sandbox create --group 38 --table 5 --attribute region --field 101` |
+| `sandbox delete <id>` | Delete sandbox | `sandbox delete 1` |
+
+### Usage Analytics — Enterprise
+
+| Command | What it does | Example |
+|---|---|---|
+| `usage-analytics` | Discover analytics models + built-in dashboards | `usage-analytics` |
+| `usage-analytics models` | List all models with column counts | `usage-analytics models` |
+| `usage-analytics model <name>` | Show full column schema for one model | `usage-analytics model "Query log"` |
+| `usage-analytics query --from <file>` | Run MBQL query against the audit DB (native SQL is blocked) | `usage-analytics query --from mbql.json` |
+| `usage-analytics query --card <id> [--limit N]` | Run model card query for browsing | `usage-analytics query --card 18172 --limit 20` |
 
 ## Context Safety Rules
 
