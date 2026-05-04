@@ -583,10 +583,29 @@ The output of STUDY is the foundation for any EDIT or sync workflow. Don't skip 
 
 ## EDIT Workflow
 
+### Reading discipline
+
+**What you read for an EDIT, in order:**
+1. `dashboard <id>` summary
+2. `card <id>` summary, then `card --full --out` for the cards you're touching
+3. (optional) repo `.sql` / spec JSON for context only — never as the current state
+
+**What you don't need to read:** the project's build/deploy scripts. The CLI in this skill is the only path that mutates Metabase; there's no project-side deploy step to discover. If a repo has card-creation scripts, they're for one-time setup, not for ongoing edits.
+
+**Escape hatch — read project scripts when:**
+- You need a convention they encode that isn't visible in the live card payload — e.g. template-tag UUIDs, `FIELD_ID` constants, snippet IDs, or `alias` values the build assembles into SQL.
+- You're editing a card whose SQL is composed at build time (templated, generated, or assembled from fragments) and you can't reconstruct the source from `card --full` alone.
+- The user explicitly asks you to update the repo's build/spec layer (not just the live card).
+- You need to find a card_id and the repo has a mapping file (e.g. `card-ids.json`) — read the mapping file directly; don't reverse-engineer the build script.
+
+If you find yourself reading a build script "to understand how things fit together," stop. The CLI is sufficient for any card/dashboard mutation.
+
+### Steps
+
 1. **Audit current state** — run the STUDY workflow above. The audit prevents misdescribing the dashboard and catches per-dashcard viz overrides you would otherwise overwrite when constructing a new layout payload.
 2. **Identify what to change** — compare against requirements
 3. **For layout changes** — `dashboard <id> --layout --out current.json`, modify, `dashboard put <id> --from updated.json`
-4. **For card query changes** — `card <id> --full --out card.json`, edit the SQL/MBQL, `card update <id> --patch patch.json`
+4. **For card query changes** — `card <id> --full --out card.json`, edit the SQL/MBQL, `card update <id> --patch patch.json`. **The live card in Metabase is the source of truth, not any repo `.sql` file.** Repo SQL can be stale (uncommitted edits, drift from manual UI tweaks, build script that only creates and never updates) — always start from `card --full`, not from the repo file. If a `.sql` source file exists, update it *after* the live edit lands so the two stay in sync; never push a repo file blind without checking it matches the live card first.
 5. **For viz changes** — modify `visualization_settings` in the dashcard (dashboard-level override) or card (card-level default). Remember: dashcard-level wins for that placement only.
 6. **Test** — run Phase 4 checklist on changed items
 
